@@ -1,1 +1,3 @@
-`browser-sync start -s --files '.' --no-inject-changes`
+```
+browser-sync start -s --files '.' --no-inject-changes
+```

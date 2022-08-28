@@ -9,6 +9,11 @@
   --choosin__dropdown__background: #fff;
 }
 
+.choosin,
+.choosin * {
+  box-sizing: border-box;
+}
+
 .choosin {
   position: relative;
   display: flex;
@@ -63,14 +68,15 @@
   transform-origin: right top;
 }
 
-.choosin__ui-wrapper {
+.choosin__uiWrapper {
   position: absolute;
   top: 100%;
   display: none;
+  flex-direction: column;
   background: var(--choosin__dropdown__background, #fff);
 }
-.choosin[open] .choosin__ui-wrapper {
-  display: block;
+.choosin[open] .choosin__uiWrapper {
+  display: flex;
 }
 
 .csn-dropdown {
@@ -83,4 +89,8 @@
   display: block;
   padding-block: 0.25em;
   padding-inline-start: 0.5em;
+}
+
+.csn-search__textField {
+  margin: 0.25em;
 }

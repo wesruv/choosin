@@ -9,7 +9,14 @@
       padding: 20px 40px;
       font-size: 18px;
       line-height: 1.6;
+      font-family: Arial, Helvetica, sans-serif;
       background: #ddd;
+    }
+
+    input[type="text"] {
+      font: inherit;
+      padding-block: 0.25em;
+      text-indent: 0.5em;
     }
   </style>
 
@@ -22,7 +29,7 @@
   <button class="choosin__trigger">
     United States
   </button>
-  <div class="choosin__ui-wrapper">
+  <div class="choosin__uiWrapper">
     <div class="choosin__search-wrapper csn-search"></div>
     <ul class="choosin__dropdown csn-dropdown">
        <li class="csn-dropdown__option-wrapper">
@@ -1253,7 +1260,7 @@
   <button class="choosin__trigger">
     United States
   </button>
-  <div class="choosin__ui-wrapper">
+  <div class="choosin__uiWrapper">
     <div class="choosin__search-wrapper csn-search"></div>
     <ul class="choosin__dropdown csn-dropdown">
        <li class="csn-dropdown__option-wrapper">
@@ -2479,4 +2486,12 @@
     </ul>
   </div>
 </div>
+
+<script>
+  window.addEventListener('load', () => {
+    const $choosin = document.querySelector('.choosin');
+    $choosin.choosin.open();
+  });
+</script>
+
 </body></html>
