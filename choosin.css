@@ -33,8 +33,12 @@
   border-radius: 0.25em 0.25em 0 0;
 }
 
+.choosin[class] [hidden] {
+  display: none;
+}
+
 .choosin__trigger,
-.csn-dropdown__option {
+.csn-optionList__option {
   margin: 0;
   padding: 0;
   border: 0;
@@ -47,10 +51,14 @@
 
 .choosin__trigger {
   position: relative;
+  width: 100%;
   margin: 0;
   padding-block: 0.25em;
   padding-inline-start: 0.5em;
-  padding-inline-end: 2em;
+  padding-inline-end: 3em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .choosin__trigger:before {
   content: "";
@@ -72,6 +80,7 @@
   position: absolute;
   top: 100%;
   display: none;
+  width: 100%;
   flex-direction: column;
   background: var(--choosin__dropdown__background, #fff);
 }
@@ -79,18 +88,46 @@
   display: flex;
 }
 
-.csn-dropdown {
+/**
+ * Search styles
+ */
+.csn-search {
+  display: flex;
+  flex-direction: column;
+}
+
+.csn-search__textField {
+  margin: 0.25em;
+}
+
+/**
+ * Dropdown
+ */
+.csn-optionList {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.csn-dropdown__option {
+.csn-optionList__option {
   display: block;
+  width: 100%;
   padding-block: 0.25em;
   padding-inline-start: 0.5em;
 }
 
-.csn-search__textField {
-  margin: 0.25em;
+.csn-optionList__option:hover,
+.csn-optionList__option:focus,
+.csn-optionList__option--highlight,
+/* Outspecify the highlight exceptions */
+.csn-optionList__option--highlight[class][class]:hover,
+.csn-optionList__option--highlight[class][class]:hover {
+  background: rgb(196, 236, 255);
+}
+
+/* Highlight exceptions. */
+/* Don't highlight the highlighted element if we're focused or hovered on a different option */
+.csn-optionList:hover .csn-optionList__option--highlight,
+.csn-optionList:focus-within .csn-optionList__option--highlight {
+  background: transparent;
 }

@@ -245,6 +245,7 @@
   const openChoosin = ($choosin) => {
     if (!isChoosinElement($choosin)) {
       console.error('openChoosin: Sent a bad element', $choosin);
+      return;
     }
     $choosin.setAttribute('open', '');
     if ($choosin.choosin.state.get('hasSearch')) {
@@ -269,8 +270,8 @@
 
   /**
    * Handler for an option being selected
-   * @param {Event} event
-   * @param {HTMLElement} $option A .csn-dropdown__option element
+   * @param {HTMLElement} $option A .csn-optionList__option element
+   * @param {HTMLElement} $choosin The outer wrapper of this option's choosin element
    */
   const optionSelect = (event, $option, $choosin) => {
     const value = $option.dataset.value;
@@ -287,9 +288,9 @@
    * @param {HTMLElement} $choosin The outer wrapper of a choosin element
    */
   const processOptions = ($choosin) => {
-    const $options = $choosin.querySelectorAll('.csn-dropdown__option');
+    const $options = $choosin.querySelectorAll('.csn-optionList__option');
     // An object we'll use for search
-    const valuesIndex = {};
+    const valueToOptionMap = {};
     for (let index = 0; index < $options.length; index++) {
       const $option = $options[index];
       const value = $option.dataset.value;
@@ -302,7 +303,7 @@
         console.warn('Choosin: Option doesn\'t have a value and was hidden', $option);
         continue;
       }
-      if (valuesIndex[valueLowerCase]) {
+      if (valueToOptionMap[valueLowerCase]) {
         // Theres another option with the same value when it's converted to lowercase.
         // HTML is case sensitive, but going to make this case insensitive for now.
         $option.hidden = true;
@@ -310,19 +311,36 @@
           'Choosin: Option has a redundant value and was hidden',
           {
             'hiddenOption':$option,
-            'previousOption': valuesIndex[valueLowerCase],
+            'previousOption': valueToOptionMap[valueLowerCase],
           }
         );
         continue;
       }
 
       // Adding options as lowercase so search is case insensitive
-      valuesIndex[valueLowerCase] = $option;
+      valueToOptionMap[valueLowerCase] = $option;
       $option.addEventListener('click', (event) => optionSelect(event, $option, $choosin));
     }
 
     // Add values index to state for search
-    $choosin.choosin.state.set('valuesIndex', valuesIndex);
+    $choosin.choosin.state.set('valueToOptionMap', valueToOptionMap);
+    $choosin.choosin.state.set('optionsValues', Object.keys(valueToOptionMap));
+  }
+
+  /**
+   * Highlight a given option
+   * @param {HTMLElement} $option A .csn-optionList__option element
+   * @param {HTMLElement} $choosin The outer wrapper of a choosin element
+   */
+  const highlightOption = ($option, $choosin) => {
+    const $previousHighlightedOption = $choosin.choosin.state.get('optionHighlighted');
+    const highlightClass = 'csn-optionList__option--highlight';
+    if ($previousHighlightedOption) {
+      $previousHighlightedOption.classList.remove(highlightClass);
+    }
+
+    $option.classList.add(highlightClass);
+    $choosin.choosin.state.set('optionHighlighted', $option);
   }
 
   /**
@@ -340,7 +358,8 @@
     }
     $trigger.addEventListener('click', (e) => {
       e.preventDefault();
-      $choosin.hasAttribute('open') ? closeChoosin($choosin) : openChoosin($choosin);
+      const isOpen = $choosin.choosin.state.get('isOpen');
+      $choosin.choosin.state.set('isOpen', !isOpen);
     });
 
     /**
@@ -357,13 +376,52 @@
   };
 
   /**
+   * Searches options for textField.value
+   * @param {HTMLElement} $textField The search text field
+   * @param {HTMLElement} $choosin The outer wrapper of a choosin element
+   */
+  const searchCallback = ($textField, $choosin) => {
+    const valueToOptionMap = $choosin.choosin.state.get('valueToOptionMap');
+    const values = $choosin.choosin.state.get('optionsValues');
+    let searchString = $textField.value;
+
+    if (typeof searchString === 'string') {
+      searchString = searchString.trim();
+    }
+
+    // If the search is blank, make sure all options are visible
+    if (!searchString) {
+      for (let i = 0; i < values.length; i++) {
+        const $option = valueToOptionMap[values[i]];
+        if ($option.hidden) $option.hidden = false;
+      }
+      return;
+    }
+
+    // If we have a string show matches and hide misses
+    const results = values.filter(value => value.indexOf($textField.value) >= 0);
+    for (let i = 0; i < values.length; i++) {
+      const value = values[i];
+      const $option = valueToOptionMap[value];
+      const resultIndex = results.indexOf(value);
+      if (resultIndex === -1) {
+        if (!$option.hidden) $option.hidden = true;
+      }
+      else {
+        if ($option.hidden) $option.hidden = false;
+        if (resultIndex === 0) highlightOption($option, $choosin);
+      }
+    }
+  };
+
+  /**
    * Adds and sets up options search
    * @param {HTMLElement} $choosin
    */
   const addSearch = ($choosin) => {
     if ($choosin.choosin.state.get('hasSearch') === true) return;
 
-    const $searchWrapper = $choosin.querySelector('.choosin__search-wrapper');
+    const $searchWrapper = $choosin.querySelector('.choosin__searchWrapper');
 
     const hash = generateRandomHash();
     const textFieldId = `csn-searchText-${hash}`;
@@ -373,6 +431,17 @@
     $textField.setAttribute('type', 'text');
     $textField.classList.add('csn-search__textField');
     $textField.id = textFieldId;
+
+    /**
+     * Search callback debounced
+     */
+    const debouncedSearch = debounce(
+      () => searchCallback($textField, $choosin),
+      250
+    );
+
+    $textField.addEventListener('change', () => debouncedSearch());
+    $textField.addEventListener('keydown', () => debouncedSearch());
 
     // Create label
     const $textLabel = document.createElement('label');
@@ -406,23 +475,20 @@
 
       if ($choosin.classList.contains('choosin--processed')) return;
 
-      $choosin.choosin = {
-        'open': () => openChoosin($choosin),
-        'close': () => closeChoosin($choosin),
-      };
-
       ///
       // Initialize state
       ///
+      $choosin.choosin = {};
+      const defaultState = {
+        'isOpen': false,
+      };
       if ($choosin.dataset.value) {
         // We have a default value, initialize state with the default value setup
         const defaultValue = $choosin.dataset.value;
-        const $itemWithValue = $choosin.querySelector(`.csn-dropdown__option[data-value="${defaultValue}"]`);
+        const $itemWithValue = $choosin.querySelector(`.csn-optionList__option[data-value="${defaultValue}"]`);
         if ($itemWithValue) {
-          $choosin.choosin.state = new simpleState({
-            'activeOption': $itemWithValue,
-          },
-          'verbose');
+          defaultState.activeOption = $itemWithValue;
+          $choosin.choosin.state = new simpleState(defaultState, 'verbose');
         }
         else {
           console.error(`choosin init: Didn\'t find "${defaultValue}" in options`);
@@ -430,8 +496,25 @@
       }
       else {
         // No default value, initialize empty state
-        $choosin.choosin.state = new simpleState();
+        $choosin.choosin.state = new simpleState(defaultState);
       }
+
+      $choosin.choosin.state.subscribe('isOpen', (newValue, oldValue) => {
+        console.log('isOpenin', newValue, oldValue);
+        if (newValue !== oldValue) {
+          newValue ? openChoosin($choosin) : closeChoosin($choosin);
+        }
+      });
+
+      $choosin.addEventListener('keyup', (event) => {
+        if (event.key === 'Escape') {
+          $choosin.choosin.state.set('isOpen', false);
+        }
+      });
+
+      // Setup methods
+      $choosin.choosin.open = () => $choosin.choosin.state.set('isOpen', true);
+      $choosin.choosin.close = () => $choosin.choosin.state.set('isOpen', false);
 
       processOptions($choosin);
       setupTrigger($choosin);
