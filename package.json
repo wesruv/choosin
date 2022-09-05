@@ -2,9 +2,11 @@
   "name": "choosin",
   "version": "0.0.0",
   "description": "Top secret side project of a madman",
-  "main": "index.js",
+  "engines": {
+    "node": ">=14.15.1"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "browser-sync start -s 'src' --files 'src' --no-inject-changes"
   },
   "repository": {
     "type": "git",
