@@ -116,18 +116,6 @@
   padding-inline-start: 0.5em;
 }
 
-.csn-optionList__option:hover,
-.csn-optionList__option:focus,
-.csn-optionList__option--highlight,
-/* Outspecify the highlight exceptions */
-.csn-optionList__option--highlight[class][class]:hover,
-.csn-optionList__option--highlight[class][class]:hover {
+.csn-optionList__option--highlight {
   background: rgb(196, 236, 255);
-}
-
-/* Highlight exceptions. */
-/* Don't highlight the highlighted element if we're focused or hovered on a different option */
-.csn-optionList:hover .csn-optionList__option--highlight,
-.csn-optionList:focus-within .csn-optionList__option--highlight {
-  background: transparent;
 }

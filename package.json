@@ -1,0 +1,22 @@
+{
+  "name": "choosin",
+  "version": "0.0.0",
+  "description": "Top secret side project of a madman",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wesruv/choosin.git"
+  },
+  "author": "wesruv",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wesruv/choosin/issues"
+  },
+  "homepage": "https://github.com/wesruv/choosin#readme",
+  "devDependencies": {
+    "jest": "^29.0.2"
+  }
+}
