@@ -8,7 +8,7 @@
  * @param {string} logPrefix String to prefix log messages with
  * @link https://codepen.io/wesruv/pen/abYgJVX?editors=0010
  */
-export class simpleState {
+class simpleState {
   /**
    * Constructor.
    * @param {object} initialData Starting data
@@ -174,3 +174,5 @@ export class simpleState {
     }
   }
 };
+
+export default simpleState;

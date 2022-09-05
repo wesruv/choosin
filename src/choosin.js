@@ -1,6 +1,6 @@
 "use strict";
 
-import { simpleState } from "./modules/SimpleState.js";
+import simpleState from "./modules/SimpleState.js";
 import { debounce, generateRandomHash } from "./modules/utilty.js";
 
 (() => {
