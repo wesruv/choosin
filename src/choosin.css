@@ -4,9 +4,10 @@
   --choosin__background: #fff;
   --choosin__zindex--open: 10;
 
-  --chosen__arrow__color: #aaa;
+  --chosen__arrow__color: currentColor;
 
-  --choosin__dropdown__background: #fff;
+  --choosin__dropdown__background: var(--choosin__background, #fff);
+  --choosin__optionList__maxHeight: 30em;
 }
 
 .choosin,
@@ -27,10 +28,12 @@
   line-height: 1.4;
   background: var(--choosin__background, #fff);
 }
-
 .choosin[open] {
   z-index: var(--choosin__zindex--open, 10);
   border-radius: 0.25em 0.25em 0 0;
+}
+.choosin--dropUp[open] {
+  border-radius: 0 0 0.25em 0.25em;
 }
 
 .choosin[class] [hidden] {
@@ -60,18 +63,25 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.choosin[open] .choosin__trigger {
+  z-index: 1;
+  box-shadow: 0 0 4px 1px #ddd;
+}
+/* Dropdown Arrow */
 .choosin__trigger:before {
   content: "";
   position: absolute;
   top: 50%;
   right: 0.75em;
   display: block;
-  width: 0.125em;
-  height: 0.125em;
+  width: 0.25em;
+  height: 0.25em;
   border: 0.1875em solid transparent;
   border-width: clamp(1px, 0.125em, 0.125em);
-  border-top-color: var(--chosen__arrow__color, #aaa);
-  border-right-color: var(--chosen__arrow__color, #aaa);
+  border-bottom-width: 0;
+  border-left-width: 0;
+  border-top-color: var(--chosen__arrow__color, currentColor);
+  border-right-color: var(--chosen__arrow__color, currentColor);
   transform: translateY(0.25em) rotate(135deg);
   transform-origin: right top;
 }
@@ -79,13 +89,19 @@
 .choosin__uiWrapper {
   position: absolute;
   top: 100%;
-  display: none;
+  display: flex;
   width: 100%;
   flex-direction: column;
-  background: var(--choosin__dropdown__background, #fff);
+  visibility: hidden;
+  background: var(--choosin__dropdown__background, var(--choosin__background, #fff));
 }
 .choosin[open] .choosin__uiWrapper {
-  display: flex;
+  visibility: visible;
+}
+.choosin--dropUp .choosin__uiWrapper {
+  top: auto;
+  bottom: 100%;
+  flex-direction: column-reverse;
 }
 
 /**
@@ -104,10 +120,25 @@
  * Dropdown
  */
 .csn-optionList {
+  position: relative;
+  height: var(--js-choosin__optionList__height, auto);
+  max-height: var(--choosin__optionList__maxHeight, 30em);
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   list-style: none;
 }
+/* .csn-optionList:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    width: 100%;
+    height: 0;
+    border: 1px solid rgba(0, 255, 0, 0.25);
+} */
 
 .csn-optionList__option {
   display: block;

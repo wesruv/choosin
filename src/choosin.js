@@ -18,12 +18,40 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
   }
 
   /**
-   * Validate that a HTML Element is the outer wrapper of a choosin
+   * Checks the choosin's location on the page and dropdown contents and sets the dropdown height and direction (up or down)
    * @param {HTMLElement} $choosin The outer wrapper of a choosin element
-   * @return {boolean}
    */
-  const isChoosinElement = ($choosin) =>
-    $choosin && $choosin.classList.contains('choosin');
+  const setDropdownHeightAndDirection = ($choosin) => {
+    // Set dropdown direction and dropdown height depending on page position and size
+    const optionsWrapperBoundingClientRect = $choosin.choosin.elements.optionsWrapper.getBoundingClientRect();
+    let dropdownDirection;
+    let dropdownHeight;
+    // See if dropdown would go off of the page
+    if (optionsWrapperBoundingClientRect.top + optionsWrapperBoundingClientRect.height > window.innerHeight) {
+      // Set direction of dropdown based on it's position
+      if (optionsWrapperBoundingClientRect.top > window.innerHeight / 2) {
+        dropdownDirection = 'up';
+        // Getting distance from the top of the choosin wrapper to the top of optionList
+        let offsetFromElements = $choosin.offsetHeight;
+        if ($choosin.choosin.elements.searchWrapper && $choosin.choosin.elements.searchWrapper.offsetHeight) {
+          // Count the search offset twice
+          // The first time is because everything's rendered downward, and we're getting the location of the top of the chosen wrapper
+          // A second time to get the right height for the optionList, the search will be inbetween the top of the chosen wrapper, and the optionlist
+          offsetFromElements += $choosin.choosin.elements.searchWrapper.offsetHeight * 2;
+        }
+        dropdownHeight = Math.floor(optionsWrapperBoundingClientRect.top - offsetFromElements) - 20;
+      }
+      else {
+        dropdownDirection = 'down';
+        dropdownHeight = Math.floor(window.innerHeight - optionsWrapperBoundingClientRect.top) - 20;
+      }
+
+      // Set dropdownDirection state
+      $choosin.choosin.state.set('dropdownDirection', dropdownDirection);
+      // Set height as CSS var for styling to pick up
+      $choosin.style.setProperty('--js-choosin__optionList__height', `${dropdownHeight}px`);
+    }
+  }
 
   /**
    * Callback for state change in isOpen
@@ -41,12 +69,16 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
      * Open a $choosin element
      */
     const _open = () => {
+      setDropdownHeightAndDirection($choosin);
+
+      // Open the dropdown
       $choosin.setAttribute('open', '');
       const $optionSelected = $choosin.choosin.state.get('optionSelected');
       // Highlight an option on open
       if ($optionSelected) {
         // Choose the selected option, if there is one
         $choosin.choosin.state.set('optionHighlighted', $optionSelected);
+        makeSureOptionIsVisible($optionSelected, $choosin, false);
       }
       else {
         // Otherwise get the first visible option
@@ -54,7 +86,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
         const valueToOptionMap = $choosin.choosin.state.get('valueToOptionMap');
         const firstVisibleOptionId = visibleOptionValues[0];
         const $firstVisibleOption = valueToOptionMap[firstVisibleOptionId];
-        $choosin.choosin.state.optionHighlighted($firstVisibleOption);
+        $choosin.choosin.state.set('optionHighlighted', $firstVisibleOption);
       }
 
       // Focus on text field if we have search
@@ -71,7 +103,14 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
      */
     const _close = () => {
       $choosin.removeAttribute('open');
+      // Reset height var
+      $choosin.style.removeProperty('--js-choosin__optionList__height');
+      // Remove state that doesn't apply when closed
       $choosin.choosin.state.set('optionHighlighted', null);
+      $choosin.choosin.state.set('dropdownDirection', 'none');
+      // Reset scroll position of choosin
+      $choosin.choosin.elements.optionsWrapper.scrollTo({'top': 0});
+      // Focus the trigger per a11y best practices
       $choosin.choosin.elements.trigger.focus();
     };
 
@@ -89,7 +128,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
    * @param {HTMLElement} $optionWasSelected A .csn-optionList__option element
    * @param {HTMLElement} $choosin The outer wrapper of this option's choosin element
    */
-  const optionSelect = ($optionSelected, $optionWasSelected, $choosin) => {
+  const optionSelectedCallback = ($optionSelected, $optionWasSelected, $choosin, smoothScroll) => {
     const value = $optionSelected.dataset.value;
     if (!value) {
       console.error('Choosin option selected, but it is missing a value', $optionSelected);
@@ -103,32 +142,60 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
     $choosin.choosin.state.set('isOpen', false);
   };
 
-  const makeSureOptionIsVisible = ($option, $choosin) => {
+  /**
+   * Makes sure given option is in view of scrolling options
+   * @param {HTMLElement} $option A .csn-optionList__option element
+   * @param {HTMLElement} $choosin The outer wrapper of this option's choosin element
+   * @param {boolean} smoothScroll Set to true to smooth scroll
+   */
+  const makeSureOptionIsVisible = ($option, $choosin, smoothScroll) => {
+    if (smoothScroll === undefined) smoothScroll = true;
+    // Get DOMRects from viewport
     const optionBoundingRect = $option.getBoundingClientRect();
-    const optionHeight = $option.offsetHeight;
-    const option = {
-      'top': optionBoundingRect.top,
-      'bottom': optionBoundingRect.top + optionHeight,
-      'height': optionHeight,
+    const $scrollingParent = $choosin.choosin.elements.optionsWrapper;
+    // Retrieve cached bounding rect for optionsWrapper
+    const scrollingParentBoundingRect = $scrollingParent.getBoundingClientRect();
+
+
+    const scrollingParentTopfromDocumentTop = window.scrollY + scrollingParentBoundingRect.top; // Distance from top of the page
+    const optionTopFromDocumentTop = optionBoundingRect.top + window.scrollY + $scrollingParent.scrollTop;
+    const optionTopFromScrollingParentTop = optionTopFromDocumentTop - scrollingParentTopfromDocumentTop;
+
+    const optionListVisibleBoundaryTop = $scrollingParent.scrollTop;
+    const optionListVisibleBoundaryBottom = optionListVisibleBoundaryTop + $scrollingParent.offsetHeight;
+
+    // $scrollingParent.scrollTo(0, optionTopFromScrollingParentTop);
+
+    console.log(
+      {
+        scrollingParentTopfromDocumentTop,
+        optionTopFromDocumentTop,
+        optionTopFromScrollingParentTop,
+        optionListVisibleBoundaryTop,
+        optionListVisibleBoundaryBottom,
+      },
+      {
+        optionBoundingRect,
+        scrollingParentBoundingRect,
+      }
+    );
+
+    let scrollToY;
+    const optionIsAboveTop = optionTopFromScrollingParentTop < optionListVisibleBoundaryTop;
+    const optionIsBelowBottom = optionTopFromScrollingParentTop + optionBoundingRect.height > optionListVisibleBoundaryBottom;
+
+    if (optionIsAboveTop) {
+      const scrollOffsetByDropdownHeight = scrollingParentBoundingRect.height * 0.25;
+      scrollToY = optionTopFromScrollingParentTop - (scrollingParentBoundingRect.height * 0.25);
+    }
+    else if (optionIsBelowBottom) {
+      scrollToY = optionTopFromScrollingParentTop - optionBoundingRect.height - (scrollingParentBoundingRect.height * 0.75);
     }
 
-    const $scrollContainer = $choosin.choosin.elements.optionsWrapper;
-    const scrollContainerHeight = $scrollContainer.offsetHeight;
-    const scrollElementBoundingRect = $scrollElement.getBoundingClientRect();
-    const scrollElement = {
-      'top': scrollElementBoundingRect.top,
-    }
-    const scrollArea = {
-      'top': $scrollContainer.scrollTop,
-      'bottom': $scrollContainer.scrollTop + scrollContainerHeight,
-      'height': scrollContainerHeight,
-    }
-
-    const optionTopY = option.top + scrollArea.top;
-    const optionBottomY = option.bottom + scrollArea.top;
-    const optionIsAboveTop = optionTopY < scrollArea.top;
-    const optionIsBelowBottom = optionBottomY > scrollArea.bottom;
-    debugger;
+    if (scrollToY) $scrollingParent.scrollTo({
+      'top': scrollToY,
+      'behavior': smoothScroll ? 'smooth' : 'auto',
+    });
   }
 
   /**
@@ -137,7 +204,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
    * @param {HTMLElement} $optionWasHighlighted A .csn-optionList__option element
    * @param {HTMLElement} $choosin The outer wrapper of this option's choosin element
    */
-  const optionHighlight = ($optionToHighlight, $optionWasHighlighted) => {
+  const optionHighlightedCallback = ($optionToHighlight, $optionWasHighlighted, $choosin) => {
     const highlightClass = 'csn-optionList__option--highlight';
     if ($optionToHighlight === null) return;
     if ($optionToHighlight !== $optionWasHighlighted) {
@@ -220,10 +287,6 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
    * @param {HTMLElement} $choosin The outer wrapper of a choosin element
    */
   const setupTrigger = ($choosin) => {
-    if (!isChoosinElement($choosin)) {
-      console.error('setupTrigger: Sent a bad $choosin element', $choosin);
-    }
-
     const $trigger = $choosin.choosin.elements.trigger;
     if (!$trigger) {
       console.error('setupTrigger: Couldn\'t get $trigger element from the $choosin element', $choosin);
@@ -237,7 +300,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
     /**
      * Update the trigger when the optionSelected has changed
      */
-    $choosin.choosin.state.subscribe('optionSelected', (newValue, oldValue) => optionSelect(newValue, oldValue, $choosin));
+    $choosin.choosin.state.subscribe('optionSelected', (newValue, oldValue) => optionSelectedCallback(newValue, oldValue, $choosin));
   };
 
   /**
@@ -306,6 +369,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
     if ($choosin.choosin.state.get('hasSearch') === true) return;
 
     const $searchWrapper = $choosin.querySelector('.choosin__searchWrapper');
+    $choosin.choosin.elements.searchWrapper = $searchWrapper;
 
     const hash = generateRandomHash();
     const textFieldId = `csn-searchText-${hash}`;
@@ -395,9 +459,11 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
         $choosin.choosin.state.set('isOpen', false);
         break;
       case 'ArrowUp':
+        event.preventDefault();
         navigateOptions(-1, $choosin);
         break;
       case 'ArrowDown':
+        event.preventDefault();
         navigateOptions(1, $choosin);
         break;
       case 'Enter':
@@ -444,6 +510,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
        * @property visibleOptionValues {Array} An array of non-hidden option values in the order that the options appear
        * @property valueToOptionMap {Object} Keys are values from optionsValues
        * @property previousSearch {String} Search field value on last search
+       * @property dropdownDirection {String} 'up', 'down', or 'none'
        */
       const defaultState = {
         'isOpen': false,
@@ -455,6 +522,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
         'visibleOptionValues': [],
         'valueToOptionMap': {},
         'previousSearch': '',
+        'dropdownDirection': 'none',
       };
       if ($choosin.dataset.value) {
         // We have a default value, initialize state with the default value setup
@@ -470,6 +538,18 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
       }
       $choosin.choosin.state = new simpleState(defaultState, 'verbose');
 
+      // Set class for CSS if the dropdown direction is up
+      $choosin.choosin.state.subscribe('dropdownDirection', (newValue, oldValue) => {
+        if (newValue !== oldValue) {
+          if (newValue === 'up') {
+            $choosin.classList.add('choosin--dropUp');
+          }
+          else {
+            $choosin.classList.remove('choosin--dropUp');
+          }
+        }
+      });
+
       // Connect open close behavior to state
       $choosin.choosin.state.subscribe(
         'isOpen',
@@ -479,7 +559,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
       // Connect option highlighting to state
       $choosin.choosin.state.subscribe(
         'optionHighlighted',
-        (newValue, oldValue) => optionHighlight(newValue, oldValue, $choosin)
+        (newValue, oldValue) => optionHighlightedCallback(newValue, oldValue, $choosin)
       );
 
       // Close choosin when escape is pressed
@@ -488,6 +568,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
       // Setup methods
       $choosin.choosin.open = () => $choosin.choosin.state.set('isOpen', true);
       $choosin.choosin.close = () => $choosin.choosin.state.set('isOpen', false);
+
       // Pointers to commonly used elements
       $choosin.choosin.elements = {
         'optionsWrapper': $choosin.querySelector('.csn-optionList'),

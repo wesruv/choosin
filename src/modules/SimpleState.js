@@ -11,7 +11,9 @@
 class simpleState {
   /**
    * Constructor.
-   * @param {object} initialData Starting data
+   * @param {object} initialData Object with keys and values of initial data
+   * @param {string} logLevel Set to verbose, warnings, errors, none. Defaults to none
+   * @param {string} logPrefix String to prefix log messages with
    */
   constructor(initialData, logLevel, logPrefix) {
     this.logLevel = logLevel ? logLevel : 'errors';
