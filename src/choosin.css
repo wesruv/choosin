@@ -15,7 +15,11 @@
   box-sizing: border-box;
 }
 
-.choosin {
+.choosin--hide {
+  opacity: 0.5;
+}
+
+.choosin--processed {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -28,7 +32,7 @@
   line-height: 1.4;
   background: var(--choosin__background, #fff);
 }
-.choosin[open] {
+.choosin--processed[open] {
   z-index: var(--choosin__zindex--open, 10);
   border-radius: 0.25em 0.25em 0 0;
 }

@@ -110,8 +110,10 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
       $choosin.choosin.state.set('dropdownDirection', 'none');
       // Reset scroll position of choosin
       $choosin.choosin.elements.optionsWrapper.scrollTo({'top': 0});
-      // Focus the trigger per a11y best practices
-      $choosin.choosin.elements.trigger.focus();
+      // Focus the trigger per a11y best practices, assuming something else hasn't been focused
+      if (document.activeElement.closest('.choosin')) {
+        $choosin.choosin.elements.trigger.focus();
+      }
     };
 
     if (setToOpen) {
@@ -139,6 +141,8 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
       $trigger.dataset.value = value;
       $trigger.innerText = $optionSelected.innerText;
     }
+    const valueToSelectOptionMap = $choosin.choosin.state.get('valueToSelectOptionMap');
+    if (valueToSelectOptionMap[value]) valueToSelectOptionMap[value].setAttribute('selected', '');
     $choosin.choosin.state.set('isOpen', false);
   };
 
@@ -216,73 +220,6 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
   }
 
   /**
-   * Validates and sets up options under the given choosin
-   * @param {HTMLElement} $choosin The outer wrapper of a choosin element
-   */
-  const processOptions = ($choosin) => {
-    const $options = $choosin.querySelectorAll('.csn-optionList__option');
-    // Options values array, to be stored in order
-    const optionsValues = [];
-    const optionValuesLowerCase = [];
-    // An object we'll use for search
-    const valueToOptionMap = {};
-
-
-    const processOption = ($option) => {
-      const value = $option.dataset.value;
-
-      ///
-      // Validate $option
-      ///
-      if (typeof value !== 'string') {
-        $option.hidden = true;
-        console.warn('Choosin: Option doesn\'t have a value and was hidden', $option);
-        return;
-      }
-      if (valueToOptionMap[value]) {
-        // Theres another option with the same value when it's converted to lowercase.
-        // HTML is case sensitive, but going to make this case insensitive for now.
-        $option.hidden = true;
-        console.warn(
-          'Choosin: Option has a redundant value and was hidden',
-          {
-            'hiddenOption':$option,
-            'previousOption': valueToOptionMap[value],
-          }
-        );
-        return;
-      }
-
-      optionsValues.push(value);
-      optionValuesLowerCase.push(value.toLowerCase());
-      // Adding options as lowercase so search is case insensitive
-      valueToOptionMap[value] = $option;
-
-      // Change the form value when an option is clicked
-      $option.addEventListener('click', () => {
-        $choosin.choosin.state.set('optionSelected', $option);
-      });
-
-      // Update highlighted option on hover
-      $option.addEventListener('mouseover', () => {
-        $choosin.choosin.state.set('optionHighlighted', $option);
-      });
-
-      $option.addEventListener('focus', () => {
-        $choosin.choosin.state.set('optionHighlighted', $option);
-      })
-    }
-
-    // Process each option
-    $options.forEach(processOption);
-
-    // Add values index to state for search
-    $choosin.choosin.state.set('valueToOptionMap', valueToOptionMap);
-    $choosin.choosin.state.set('optionsValues', optionsValues);
-    $choosin.choosin.state.set('optionValuesLowerCase', optionValuesLowerCase);
-  }
-
-  /**
    * Validates and sets up trigger (the always visible dropdown UI)
    * @param {HTMLElement} $choosin The outer wrapper of a choosin element
    */
@@ -291,8 +228,8 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
     if (!$trigger) {
       console.error('setupTrigger: Couldn\'t get $trigger element from the $choosin element', $choosin);
     }
-    $trigger.addEventListener('click', (e) => {
-      e.preventDefault();
+    $trigger.addEventListener('click', (event) => {
+      event.preventDefault();
       const isOpen = $choosin.choosin.state.get('isOpen');
       $choosin.choosin.state.set('isOpen', !isOpen);
     });
@@ -310,7 +247,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
    */
   const searchCallback = ($textField, $choosin) => {
     const valueToOptionMap = $choosin.choosin.state.get('valueToOptionMap');
-    const values = $choosin.choosin.state.get('optionsValues');
+    const values = $choosin.choosin.state.get('optionValues');
     const valuesLowerCase = $choosin.choosin.state.get('optionValuesLowerCase');
     let searchString = $textField.value;
     const previousSearch = $choosin.choosin.state.get('previousSearch');
@@ -329,7 +266,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
         if ($option.hidden) $option.hidden = false;
       }
       // Set all options as visible in state
-      $choosin.choosin.state.set('visibleOptionValues', $choosin.choosin.state.get('optionsValues'));
+      $choosin.choosin.state.set('visibleOptionValues', $choosin.choosin.state.get('optionValues'));
       return;
     }
     $choosin.choosin.state.set('previousSearch', searchString);
@@ -381,7 +318,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
     $textField.id = textFieldId;
 
     // Default visible options to all options
-    $choosin.choosin.state.set('visibleOptionValues', $choosin.choosin.state.get('optionsValues'));
+    $choosin.choosin.state.set('visibleOptionValues', $choosin.choosin.state.get('optionValues'));
 
     /**
      * Make sure search can't be called too often
@@ -407,9 +344,10 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
   }
 
   /**
-   *
+   * Utility function to navigate the list of options
    * @param {Number} offset Number of elements to increment, positive is next, negative is previous
    * @param {HTMLElement} $choosin The outer wrapper of a choosin element
+   * // @todo Should be able to navigate when choosin is closed, like select does
    */
   const navigateOptions = (offset, $choosin) => {
     const $optionHighlighted = $choosin.choosin.state.get('optionHighlighted');
@@ -467,6 +405,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
         navigateOptions(1, $choosin);
         break;
       case 'Enter':
+        event.preventDefault();
         const $optionHighlighted = $choosin.choosin.state.get('optionHighlighted');
         if ($optionHighlighted) {
           $choosin.choosin.state.set('optionSelected', $optionHighlighted);
@@ -476,117 +415,235 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
   }
 
   /**
+   * Build out $choosin options from the select element
+   * @param {HTMLElement} $select Select element $choosin is based on
+   * @param {HTMLElement} $choosin The outer wrapper of the choosin element being build
+   */
+  const processSelectOptions = ($select, $choosin) => {
+    const $optionsWrapper = $choosin.choosin.elements.optionsWrapper;
+
+    // Options values array, to be stored in order
+    const optionValues = [];
+    const optionValuesLowerCase = [];
+    // An object we'll use for search
+    const valueToOptionMap = {};
+    const valueToSelectOptionMap = {};
+
+    // Iterate over select's children to build out choosin
+    for (let index = 0; index < $select.children.length; index++) {
+      const $element = $select.children[index];
+
+      if ($element.tagName.toLowerCase() === 'option') {
+        const value = $element.value;
+        // Make sure we have a value
+        if (!value) {
+          console.warn('Choosin: Found option in select that is missing a value, skipping it.', $element);
+          continue;
+        }
+        // Make sure the value hasn't appeared already
+        if (valueToOptionMap[value]) {
+          'Choosin: Option has a redundant value and was hidden',
+          {
+            'hiddenOption': $element,
+            'previousOption': valueToOptionMap[value],
+          }
+        }
+
+        // Build & populate the choosin option element
+        const $choosinOption = document.createElement('button');
+        $choosinOption.classList.add('csn-optionList__option');
+        $choosinOption.dataset.value = value;
+        $choosinOption.innerText = $element.innerText.trim();
+
+        // Add data to our data arrays and objects
+        optionValues.push(value);
+        optionValuesLowerCase.push(value.toLowerCase());
+        valueToOptionMap[value] = $choosinOption;
+        valueToSelectOptionMap[value] = $element;
+
+        // If it's a selected element, update state so it knows that
+        if ($element.hasAttribute('selected')) {
+          $choosin.choosin.state.set('optionSelected', $choosinOption);
+        }
+
+        // Add the choosin option to the $choosin element
+        $optionsWrapper.append($choosinOption);
+
+        // Add event listeners
+        // Change the form value when an option is clicked
+        $choosinOption.addEventListener('click', (event) => {
+          event.preventDefault();
+          $choosin.choosin.state.set('optionSelected', $choosinOption);
+        });
+
+        // Update highlighted option on hover
+        $choosinOption.addEventListener('mouseover', () => {
+          $choosin.choosin.state.set('optionHighlighted', $choosinOption);
+        });
+
+        $choosinOption.addEventListener('focus', () => {
+          $choosin.choosin.state.set('optionHighlighted', $choosinOption);
+        });
+      }
+    }
+
+    // Update state
+    $choosin.choosin.state.set('optionValues', optionValues);
+    $choosin.choosin.state.set('optionValuesLowerCase', optionValuesLowerCase);
+    $choosin.choosin.state.set('valueToOptionMap', valueToOptionMap);
+    $choosin.choosin.state.set('valueToSelectOptionMap', valueToSelectOptionMap);
+  }
+
+  /**
+   * Build out $choosin options from the select element
+   * @param {HTMLElement} $select Select element $choosin is based on
+   * @returns {Array} Array of [$choosin, $select]
+   */
+  const createChoosinFromSelect = ($select) => {
+    if ($select.classList.contains('choosin--hide')) return;
+
+    // Get a selected element
+    let $optionSelected = $select.querySelector('option[selected]');
+    // Create the markup for the new element
+    const $choosin = document.createElement('div');
+    const $trigger = document.createElement('button');
+    const $uiWrapper = document.createElement('div');
+    const $searchWrapper = document.createElement('div');
+    const $optionsWrapper = document.createElement('ul');
+
+    // If there isn't a selected element, default to the first option
+    if (!$optionSelected) {
+      $select.querySelector('option');
+    }
+
+    $choosin.classList.add('choosin');
+    $choosin.dataset.value = $optionSelected.value;
+
+    $trigger.classList.add('choosin__trigger');
+    $trigger.innerText = $optionSelected.innerText.trim();
+    $choosin.append($trigger);
+
+    $uiWrapper.classList.add('choosin__uiWrapper');
+    $choosin.append($uiWrapper);
+
+    $searchWrapper.classList.add('choosin__searchWrapper');
+    $uiWrapper.append($searchWrapper);
+
+    $optionsWrapper.classList.add('choosin__optionsWrapper', 'csn-optionList');
+    $uiWrapper.append($optionsWrapper);
+
+    ///
+    // Initialize state
+    ///
+    $choosin.choosin = {
+      'elements': {
+        'optionsWrapper': $optionsWrapper,
+        'trigger': $trigger,
+        'searchWrapper': $searchWrapper,
+      }
+    };
+
+    /**
+     * State keys and docs
+     * @property originalSelect {HTMLElement} Select element choosin was generated from
+     * @property isOpen {boolean} Whether or not the choosin is open
+     * @property hasSearch {boolean} If search has been initialized
+     * @property optionSelected {HTMLElement|null} Currently selected option element that has the value the form element is set to
+     * @property optionHighlighted {HTMLElement|null} Currently highlighted option element, highlighting is for UI state for hover and keyboard navigation
+     * @property optionValues {Array} An array of all option values in the order that the options appear
+     * @property optionValuesLowerCase {Array} The same as optionValues, this is kept for search
+     * @property visibleOptionValues {Array} An array of non-hidden option values in the order that the options appear
+     * @property valueToOptionMap {Object} An object whose keys are option values and point to the choosin's option element
+     * @property valueToSelectOptionMap {Object} An object whose keys are option values and point to the select's option element
+     * @property previousSearch {String} Search field value on last search
+     * @property dropdownDirection {String} 'up', 'down', or 'none'
+     */
+    const defaultState = {
+      'originalSelect': $select,
+      'isOpen': false,
+      'hasSearch': false,
+      'optionSelected': null,
+      'optionHighlighted': null,
+      'optionValues': [],
+      'optionValuesLowerCase': [],
+      'visibleOptionValues': [],
+      'valueToOptionMap': {},
+      'valueToSelectOptionMap': {},
+      'previousSearch': '',
+      'dropdownDirection': 'none',
+    };
+    $choosin.choosin.state = new simpleState(defaultState, 'verbose');
+
+    processSelectOptions($select, $choosin);
+
+    /**
+     * Setup basic state subscribers and event handlers
+     */
+    // Set class for CSS if the dropdown direction is up
+    $choosin.choosin.state.subscribe('dropdownDirection', (newValue, oldValue) => {
+      if (newValue !== oldValue) {
+        if (newValue === 'up') {
+          $choosin.classList.add('choosin--dropUp');
+        }
+        else {
+          $choosin.classList.remove('choosin--dropUp');
+        }
+      }
+    });
+
+    // Connect open close behavior to state
+    $choosin.choosin.state.subscribe(
+      'isOpen',
+      (newValue, oldValue) => isOpenCallback(newValue, oldValue, $choosin)
+    );
+
+    // Connect option highlighting to state
+    $choosin.choosin.state.subscribe(
+      'optionHighlighted',
+      (newValue, oldValue) => optionHighlightedCallback(newValue, oldValue, $choosin)
+    );
+
+    $choosin.addEventListener('keydown', (event) => keyboardHandler(event, $choosin));
+
+    // Add helper methods
+    $choosin.choosin.open = () => $choosin.choosin.state.set('isOpen', true);
+    $choosin.choosin.close = () => $choosin.choosin.state.set('isOpen', false);
+
+    setupTrigger($choosin);
+    addSearch($choosin);
+
+    // Update elements with classes that show we've processed the elements
+    $choosin.classList.add('choosin--processed');
+    $select.classList.add('choosin--hide');
+
+    // Append the choosin element to the DOM
+    $select.after($choosin);
+    return [$choosin, $select];
+  }
+
+  /**
    * Initialize all choosins on the page
    */
   const init = () => {
     const $choosins = document.querySelectorAll('.choosin');
+    let $select;
 
-    /**
-     * Initialize a choosin element
-     * @param {HTMLElement} $choosin The outer wrapper of a choosin element
-     */
-    const processChoosin = ($choosin) => {
-      // Overriding debugLog to check for attribute on $choosin element
-      debugLog = (...args) => {
-        if (debug || $choosin.hasAttribute('debug')) {
-          console.log(...args);
-        }
+    // Iterate over choosins and init them
+    for (let index = 0; index < $choosins.length; index++) {
+      let $choosin = $choosins[index];
+      if ($choosin.tagName.toLowerCase() === 'select') {
+        createChoosinFromSelect($choosin);
       }
-
-      if ($choosin.classList.contains('choosin--processed')) return;
-
-      ///
-      // Initialize state
-      ///
-      $choosin.choosin = {};
-      /**
-       * State keys and docs
-       * @property isOpen {boolean} Whether or not the choosin is open
-       * @property hasSearch {boolean} If search has been initialized
-       * @property optionSelected {HTMLElement|null} Currently selected option element that has the value the form element is set to
-       * @property optionHighlighted {HTMLElement|null} Currently highlighted option element, highlighting is for UI state for hover and keyboard navigation
-       * @property optionsValues {Array} An array of all option values in the order that the options appear
-       * @property optionValuesLowerCase {Array} The same as optionsValues, this is kept for search
-       * @property visibleOptionValues {Array} An array of non-hidden option values in the order that the options appear
-       * @property valueToOptionMap {Object} Keys are values from optionsValues
-       * @property previousSearch {String} Search field value on last search
-       * @property dropdownDirection {String} 'up', 'down', or 'none'
-       */
-      const defaultState = {
-        'isOpen': false,
-        'hasSearch': false,
-        'optionSelected': null,
-        'optionHighlighted': null,
-        'optionValues': [],
-        'optionValuesLowerCase': [],
-        'visibleOptionValues': [],
-        'valueToOptionMap': {},
-        'previousSearch': '',
-        'dropdownDirection': 'none',
-      };
-      if ($choosin.dataset.value) {
-        // We have a default value, initialize state with the default value setup
-        const defaultValue = $choosin.dataset.value;
-        const $itemWithValue = $choosin.querySelector(`.csn-optionList__option[data-value="${defaultValue}"]`);
-        if ($itemWithValue) {
-          // Update default state
-          defaultState.optionSelected = $itemWithValue;
-        }
-        else {
-          console.error(`choosin init: Didn\'t find "${defaultValue}" in options`);
-        }
+      else {
+        console.warn('Choosin: A non-select element has a choosin class, and cannot be processed', {$choosin});
+        $choosin.hidden = true;
       }
-      $choosin.choosin.state = new simpleState(defaultState, 'verbose');
-
-      // Set class for CSS if the dropdown direction is up
-      $choosin.choosin.state.subscribe('dropdownDirection', (newValue, oldValue) => {
-        if (newValue !== oldValue) {
-          if (newValue === 'up') {
-            $choosin.classList.add('choosin--dropUp');
-          }
-          else {
-            $choosin.classList.remove('choosin--dropUp');
-          }
-        }
-      });
-
-      // Connect open close behavior to state
-      $choosin.choosin.state.subscribe(
-        'isOpen',
-        (newValue, oldValue) => isOpenCallback(newValue, oldValue, $choosin)
-      );
-
-      // Connect option highlighting to state
-      $choosin.choosin.state.subscribe(
-        'optionHighlighted',
-        (newValue, oldValue) => optionHighlightedCallback(newValue, oldValue, $choosin)
-      );
-
-      // Close choosin when escape is pressed
-      $choosin.addEventListener('keydown', (event) => keyboardHandler(event, $choosin));
-
-      // Setup methods
-      $choosin.choosin.open = () => $choosin.choosin.state.set('isOpen', true);
-      $choosin.choosin.close = () => $choosin.choosin.state.set('isOpen', false);
-
-      // Pointers to commonly used elements
-      $choosin.choosin.elements = {
-        'optionsWrapper': $choosin.querySelector('.csn-optionList'),
-        'trigger': $choosin.querySelector('.choosin__trigger'),
-      };
-
-      processOptions($choosin);
-      setupTrigger($choosin);
-      addSearch($choosin);
-
-      $choosin.classList.add('choosin--processed');
-    };
-
+    }
     // On document clicks, close any choosins that aren't in the click's path
     document.addEventListener('click', (event) => {
       let $choosinInPath;
       const clickPath = event.path;
-      const $choosinsOnPage = document.querySelectorAll('.choosin');
+      const $choosinsOnPage = document.querySelectorAll('.choosin--processed');
       // Quick exit if there aren't any choosins
       if ($choosinsOnPage.length === 0) return;
 
@@ -595,13 +652,14 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
         const $element = clickPath[index];
         if ($element && $element.classList && $element.classList.contains('choosin')) {
           $choosinInPath = $element;
+          break;
         }
       }
 
       debugLog('Close choosins not in path', {$choosinInPath}, clickPath);
       // Iterate over all $choosins and close any that aren't in the path
       for (let index = 0; index < $choosinsOnPage.length; index++) {
-        const $choosin = $choosins[index];
+        const $choosin = $choosinsOnPage[index];
         const isOpen = $choosin.choosin.state.get('isOpen');
         if (isOpen && $choosin !== $choosinInPath) {
           $choosin.choosin.state.set('isOpen', false);
@@ -609,10 +667,7 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
       }
     });
 
-    // Iterate over choosins and init them
-    for (let index = 0; index < $choosins.length; index++) {
-      processChoosin($choosins[index]);
-    }
+
   }
 
   window.addEventListener('DOMContentLoaded', init);
