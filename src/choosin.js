@@ -168,22 +168,6 @@ import { debounce, generateRandomHash } from "./modules/utilty.js";
     const optionListVisibleBoundaryTop = $scrollingParent.scrollTop;
     const optionListVisibleBoundaryBottom = optionListVisibleBoundaryTop + $scrollingParent.offsetHeight;
 
-    // $scrollingParent.scrollTo(0, optionTopFromScrollingParentTop);
-
-    console.log(
-      {
-        scrollingParentTopfromDocumentTop,
-        optionTopFromDocumentTop,
-        optionTopFromScrollingParentTop,
-        optionListVisibleBoundaryTop,
-        optionListVisibleBoundaryBottom,
-      },
-      {
-        optionBoundingRect,
-        scrollingParentBoundingRect,
-      }
-    );
-
     let scrollToY;
     const optionIsAboveTop = optionTopFromScrollingParentTop < optionListVisibleBoundaryTop;
     const optionIsBelowBottom = optionTopFromScrollingParentTop + optionBoundingRect.height > optionListVisibleBoundaryBottom;
