@@ -4,10 +4,22 @@
 // @todo Translations
 // @todo Accessibility
 // @todo Watch for updates on select element and update choosin
+// @todo Ability to turn change debug logging after init
 
 import simpleState from "./modules/SimpleState.js";
 import { debounce, generateRandomHash } from "./modules/utilty.js";
 
+/**
+ * A no-dependency HTML select UI replacement
+ * @class
+ * @constructor
+ * @public
+ * @param {object} $select HTML select element
+ * @param {object} options Options object
+ * @param {boolean} options.logLevel Set to verbose, warnings, errors, none. Defaults to error
+ * @param {boolean} options.logPrefix String to prefix log messages with
+ * @link https://codepen.io/wesruv/pen/abYgJVX?editors=0010
+ */
 class Choosin {
   constructor($select, options) {
     this.logLevel = options && options.logLevel ? logLevel : 'errors';
@@ -743,23 +755,4 @@ class Choosin {
   }
 }
 
-/**
- * Initialize all choosins on the page
- */
-const init = () => {
-  const $choosins = document.querySelectorAll('.choosin');
-
-  // Iterate over choosins and init them
-  for (let index = 0; index < $choosins.length; index++) {
-    let $choosin = $choosins[index];
-    if ($choosin.tagName.toLowerCase() === 'select') {
-      new Choosin($choosin);
-    }
-    else {
-      this.log('warn', 'A non-select element has a choosin class, and cannot be processed', {$choosin});
-      $choosin.hidden = true;
-    }
-  }
-}
-
-window.addEventListener('DOMContentLoaded', init);
+export default Choosin;
