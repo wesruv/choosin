@@ -6,6 +6,9 @@
     "node": ">=18.8.0"
   },
   "scripts": {
+    "cypress": "cypress",
+    "gulp": "gulp",
+    "start": "gulp start"
   },
   "repository": {
     "type": "git",
@@ -18,5 +21,8 @@
   },
   "homepage": "https://github.com/wesruv/choosin#readme",
   "devDependencies": {
+    "browser-sync": "^2.27.10",
+    "cypress": "^10.9.0",
+    "gulp": "^4.0.2"
   }
 }
