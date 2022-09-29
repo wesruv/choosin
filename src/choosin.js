@@ -83,11 +83,12 @@ class Choosin {
         dropdownDirection = 'up';
         // Getting distance from the top of the choosin wrapper to the top of optionList
         let offsetFromElements = $choosin.offsetHeight;
-        if (this.elements.searchWrapper && this.elements.searchWrapper.offsetHeight) {
+        const $searchWrapper = this.elements?.search?.wrapper;
+        if ($searchWrapper && $searchWrapper.offsetHeight) {
           // Count the search offset twice
           // The first time is because everything's rendered downward, and we're getting the location of the top of the choosin wrapper
           // A second time to get the right height for the optionList, the search will be inbetween the top of the choosin wrapper, and the optionlist
-          offsetFromElements += this.elements.searchWrapper.offsetHeight * 2;
+          offsetFromElements += $searchWrapper.offsetHeight * 2;
         }
         dropdownHeight = Math.floor(optionsListBoundingClientRect.top - offsetFromElements) - 20;
       }
@@ -420,11 +421,12 @@ class Choosin {
     }
 
     // Get current location in the options
-    const highlightedValue = $optionHighlighted.dataset?.value;
+    const optionHashesInOrder = this.state.get('optionHashesInOrder');
+    const highlightedHash = $optionHighlighted.dataset.csnHash;
     const visibleOptionsInOrder = this.state.get('visibleOptionHashes');
-    const highlightedIndex = visibleOptionsInOrder.indexOf(highlightedValue);
+    const highlightedIndex = optionHashesInOrder.indexOf(highlightedHash);
     // Get the list of options
-    const optionsMap = this.state.get('valueToOptionMap');
+    const optionsMap = this.state.get('optionsMap');
 
     if (highlightedIndex < 0) {
       this.log('error', 'Couldn\'t find highlighted option in state data');
@@ -441,8 +443,8 @@ class Choosin {
       newOffset = visibleOptionsInOrder.length - 1;
     }
 
-    const newOffsetId = visibleOptionsInOrder[newOffset];
-    const $optionToHighlight = optionsMap[newOffsetId];
+    const newOptionHash = visibleOptionsInOrder[newOffset];
+    const $optionToHighlight = optionsMap[newOptionHash].choosinOption;
     this.state.set('optionHighlighted', $optionToHighlight);
     $optionToHighlight.focus();
   }
@@ -549,6 +551,8 @@ class Choosin {
         const $choosinOption = this.processOption($element);
         const hash = $choosinOption.dataset.csnHash;
         optionHashesInOrder.push(hash);
+        const $liWrapper = document.createElement('li');
+        $liWrapper.classList.add('csn-optionList__item-wrapper');
 
         // Add data to our data arrays and objects
         optionsMap[hash] = {
@@ -559,7 +563,8 @@ class Choosin {
         }
 
         // Add the choosin option to the $choosin element
-        $optionsList.append($choosinOption);
+        $liWrapper.append($choosinOption);
+        $optionsList.append($liWrapper);
       }
     }
 
@@ -650,7 +655,7 @@ class Choosin {
       'hasSearch': false,
       'previousSearch': '',
     };
-    this.state = new simpleState(defaultState);
+    this.state = new simpleState(defaultState, 'verbose');
 
     this.processSelectChildren($select, $choosin);
 
