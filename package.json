@@ -8,6 +8,8 @@
   "scripts": {
     "cypress": "cypress",
     "gulp": "gulp",
+    "test": "cypress run",
+    "clean": "rm -rf node_modules && cypress cache clear",
     "start": "gulp start"
   },
   "repository": {

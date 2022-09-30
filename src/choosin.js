@@ -604,6 +604,8 @@ class Choosin {
     const $optionsList = document.createElement('ul');
 
     $choosin.dataset.csnHash = generateRandomHash();
+    $select.dataset.csnHash = $choosin.dataset.csnHash;
+
     // If there isn't a selected element, default to the first option
     if (!$optionSelected) {
       $select.querySelector('option');
@@ -709,6 +711,7 @@ class Choosin {
     $choosin.choosin = {
       'open': () => this.state.set('isOpen', true),
       'close': () => this.state.set('isOpen', false),
+      'selectElement': $select,
     };
 
     this.setupTrigger($choosin);
