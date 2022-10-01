@@ -15,6 +15,12 @@ const startBrowserSync = (done) => {
     'server': './src',
     'ui': false,
     'port': 2099,
+    'ghostMode': {
+      'scroll': false,
+      'clicks': false,
+      'location': false,
+      'forms': false,
+    }
   });
   done();
 };
