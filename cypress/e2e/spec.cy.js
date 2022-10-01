@@ -33,6 +33,15 @@ describe('Choosin Tests', () => {
           expect($select.children.length).to.equal($choosinOptionsList.children.length);
           expect($select.value).to.equal($choosin.dataset.value);
 
+          // Make sure selected option matches between select and choosin
+          cy.get('[aria-selected]', {'withinSubject': $choosin})
+            .then(($selectdCsnOptions) => {
+              const $selectedSelectOption = $select.querySelector('[selected]');
+              const $selectedCsnOption = $selectdCsnOptions[0];
+              expect($selectdCsnOptions.length).to.equal(1);
+              expect($selectedCsnOption.dataset.csnHash).to.equal($selectedSelectOption.dataset.csnHash);
+            });
+
       });
     });
 
@@ -105,6 +114,20 @@ describe('Choosin Tests', () => {
               });
           });
         });
+    });
+
+    it('Should show 5 options when "unit" is in search field', () => {
+      cy.get('@trigger').click();
+      cy.get('@choosin').then(($choosins) => {
+        const $choosin = $choosins[0];
+        cy.get('.csn-search__textField', {'withinSubject': $choosin})
+          .type('unit')
+          // Give the component time to search due to debounce
+          .wait(500)
+          .then(() => {
+            expect($choosin.querySelectorAll('.csn-optionList__option:not([hidden])').length).to.equal(5);
+          });
+      });
     });
   });
 

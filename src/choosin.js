@@ -202,6 +202,8 @@ class Choosin {
     }
     const $trigger = this.elements.trigger;
     if (value && $optionSelected !== $optionWasSelected) {
+      if ($optionWasSelected) $optionWasSelected.removeAttribute('aria-selected');
+      $optionSelected.setAttribute('aria-selected', 'true');
       $trigger.dataset.value = value;
       $trigger.innerText = $optionSelected.innerText;
     }
@@ -281,9 +283,6 @@ class Choosin {
       const isOpen = this.state.get('isOpen');
       this.state.set('isOpen', !isOpen);
     });
-
-    // Update the trigger text when the optionSelected has changed
-    this.state.subscribe('optionSelected', (newValue, oldValue) => this.optionSelectedCallback(newValue, oldValue, $choosin));
   };
 
   /**
@@ -545,10 +544,6 @@ class Choosin {
     const optionsMap = {};
     // An array of hashes in DOM order, for when that's needed.
     const optionHashesInOrder = [];
-    // const hashToOptionMap = {};
-    // const hashToSelectOptionMap = {};
-    // const valueToOptionMap = {};
-    // const valueToSelectOptionMap = {};
 
     // Iterate over select's children to build out choosin
     for (let index = 0; index < $select.children.length; index++) {
@@ -673,11 +668,14 @@ class Choosin {
     };
     this.state = new simpleState(defaultState, 'verbose');
 
-    this.processSelectChildren($select, $choosin);
-
     /**
      * Setup basic state subscribers and event handlers
      */
+    // Setup callback for when an option is selected
+    this.state.subscribe('optionSelected',
+      (newValue, oldValue) => this.optionSelectedCallback(newValue, oldValue)
+    );
+
     // Set class for CSS if the dropdown direction is up
     this.state.subscribe('dropdownDirection', (newValue, oldValue) => {
       if (newValue !== oldValue) {
@@ -691,8 +689,7 @@ class Choosin {
     });
 
     // Connect open close behavior to state
-    this.state.subscribe(
-      'isOpen',
+    this.state.subscribe('isOpen',
       (newValue, oldValue) => this.isOpenCallback(newValue, oldValue, $choosin)
     );
 
@@ -715,6 +712,8 @@ class Choosin {
       'selectElement': $select,
     };
 
+    // Make the elements and wire them in
+    this.processSelectChildren($select, $choosin);
     this.setupTrigger($choosin);
     this.addSearch($choosin);
 
