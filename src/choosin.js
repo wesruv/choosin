@@ -196,6 +196,7 @@ class Choosin {
   optionSelectedCallback($optionSelected, $optionWasSelected) {
     const value = $optionSelected.dataset.value;
     const hash = $optionSelected.dataset.csnHash;
+    const $choosin = this.elements.choosinWrapper;
     if (!value) {
       this.log('error', 'Option selected, but it is missing a value', $optionSelected);
       return;
@@ -204,7 +205,7 @@ class Choosin {
     if (value && $optionSelected !== $optionWasSelected) {
       if ($optionWasSelected) $optionWasSelected.removeAttribute('aria-selected');
       $optionSelected.setAttribute('aria-selected', 'true');
-      $trigger.dataset.value = value;
+      $choosin.dataset.value = value;
       $trigger.innerText = $optionSelected.innerText;
     }
     const optionsMap = this.state.get('optionsMap');

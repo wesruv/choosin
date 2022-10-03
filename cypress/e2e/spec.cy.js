@@ -1,11 +1,33 @@
+const selectors = {
+  'choosin': {
+    'default': 'div.choosin',
+    'processed': 'choosin--processed',
+    'dropUp': '.choosin--dropUp',
+  },
+  'trigger': '.choosin__trigger',
+  'optionList': '.choosin__optionsList',
+  'optionItemWrapper': '.csn-optionList__item-wrapper',
+  'choosinOption': {
+    'default': '.csn-optionList__option',
+    'highlighted': '.csn-optionList__option--highlight',
+    'selected': '[aria-selected]',
+  },
+  'search': {
+    'text': '.csn-search__textField',
+  },
+  'select': {
+    'processed': 'choosin--hide',
+  },
+};
+
 describe('Choosin Tests', () => {
   beforeEach(() => {
     cy.visit('src/index.html')
       // Creates @choosin alias for tests
-      .get('div.choosin')
+      .get(selectors.choosin.default)
         .as('choosin')
       // Get that choosin's trigger and alias it
-      .get('.choosin__trigger')
+      .get(selectors.trigger)
         .as('trigger');
   });
 
@@ -18,37 +40,44 @@ describe('Choosin Tests', () => {
         .then(($choosins) => {
           // cy.get returns a jQuery selector that can have multiple elements
           const $choosin = $choosins[0];
-          const $choosinOptionsList = $choosin.querySelector('.choosin__optionsList');
-          const $select = $choosin.choosin.selectElement;
+          const $choosinOptionsList = $choosin.querySelector(selectors.optionList);
+          const $choosinOptionsSelected = $choosin.querySelectorAll(selectors.choosinOption.selected);
           const hash = $choosin.dataset.csnHash;
+
+          const $select = $choosin.choosin.selectElement;
+          const $selectOptionSelected = $select.querySelector('[selected]');
 
           expect($choosin.choosin).to.not.be.empty;
           expect($choosinOptionsList).to.not.be.empty;
 
-          expect($choosin.classList.contains('choosin--processed')).to.be.true;
-          expect($select.classList.contains('choosin--hide')).to.be.true;
+          // Make sure the processed classes have been added
+          expect($choosin.classList.contains(selectors.choosin.processed)).to.be.true;
+          expect($select.classList.contains(selectors.select.processed)).to.be.true;
 
+          // Make sure basic info of choosin and select match
           expect($select).to.not.be.empty;
           expect(hash).to.equal($select.dataset.csnHash);
           expect($select.children.length).to.equal($choosinOptionsList.children.length);
           expect($select.value).to.equal($choosin.dataset.value);
 
           // Make sure selected option matches between select and choosin
-          cy.get('[aria-selected]', {'withinSubject': $choosin})
-            .then(($selectdCsnOptions) => {
-              const $selectedSelectOption = $select.querySelector('[selected]');
-              const $selectedCsnOption = $selectdCsnOptions[0];
-              expect($selectdCsnOptions.length).to.equal(1);
-              expect($selectedCsnOption.dataset.csnHash).to.equal($selectedSelectOption.dataset.csnHash);
-            });
-
-      });
+          expect($choosinOptionsSelected.length).to.equal(1);
+          expect($choosinOptionsSelected[0].dataset.csnHash).to.equal($selectOptionSelected.dataset.csnHash);
+        });
     });
 
-    it('Should be toggled open and closed by the trigger', () => {
+    it('Should be toggled open and closed by the trigger, and default highlighted item should be the selected value', () => {
       cy.get('@choosin')
         .click()
-        .should('have.attr', 'open');
+        .then(($choosins) => {
+          const $choosin = $choosins[0];
+          cy.get('@choosin').should('have.attr', 'open')
+            .wait(10) // Was erroring out without wait
+            .then(() => {
+              const $optionHighlighted = $choosin.querySelector(selectors.choosinOption.highlighted);
+              expect($optionHighlighted.dataset.value).to.equal($choosin.dataset.value);
+            });
+        });
       cy.get('@choosin')
         .click()
         .should('not.have.attr', 'open');
@@ -65,7 +94,9 @@ describe('Choosin Tests', () => {
           expect($choosin.hasAttribute('open')).to.not.be.true;
         });
     });
+  });
 
+  context('Open and Close Behavior tests', () => {
     it('Should close if a click happens outside of it', () => {
       cy.get('@trigger').click();
       cy.get('@choosin').should('have.attr', 'open');
@@ -80,13 +111,14 @@ describe('Choosin Tests', () => {
       cy.get('@choosin')
         .then(($choosins) => {
           const $choosin = $choosins[0];
+          // Scrolls to a point where choosin is at the top of the screen
           const scrollY = $choosin.getBoundingClientRect().top - 20;
           cy.window().then((win) => {
             cy.scrollTo(win.scrollX, scrollY)
               .get('@trigger').click(clickOptions)
               .then(() => {
                 cy.get('@choosin').should('have.attr', 'open');
-                expect($choosin.classList.contains('choosin--dropUp')).to.not.be.true;
+                expect($choosin.classList.contains(selectors.choosin.dropUp.substring(1))).to.not.be.true;
               });
           });
         });
@@ -101,7 +133,7 @@ describe('Choosin Tests', () => {
           const $choosin = $choosins[0];
           cy.window().then((win) => {
             const choosinCoords = $choosin.getBoundingClientRect();
-            cy.log('vars', choosinCoords.top, win.innerHeight, win.scrollY, choosinCoords.height, 20)
+            // Scrolls to a point where choosin is at the bottom of the screen
             const scrollY = (choosinCoords.top - win.innerHeight + win.scrollY + choosinCoords.height + 20);
             cy.scrollTo(window.scrollX, scrollY)
               .then(() => {
@@ -109,24 +141,61 @@ describe('Choosin Tests', () => {
                   .click(clickOptions)
                   .then(() => {
                     cy.get('@choosin').should('have.attr', 'open');
-                    expect($choosin.classList.contains('choosin--dropUp')).to.be.true;
+                    expect($choosin.classList.contains(selectors.choosin.dropUp.substring(1))).to.be.true;
                   });
               });
           });
         });
     });
 
-    it('Should show 5 options when "unit" is in search field', () => {
+    it('Should show the correct behaviors when a new options is selected', ()=> {
+      cy.get('@trigger')
+        .click()
+        .then(($triggers) => {
+          const $trigger = $triggers[0];
+          cy.get('@choosin').then(($choosins) => {
+            const $choosin = $choosins[0];
+            // Get the 20th option in the list and click it
+            cy.get(`${selectors.optionItemWrapper}:nth-child(20) ${selectors.choosinOption.default}`, {'withinSubject': $choosin})
+              .click()
+              .then(($choosinOptions) => {
+                const $choosinOption = $choosinOptions[0];
+                const $select = $choosin.choosin.selectElement;
+                const $choosinOptionsSelected = $choosin.querySelectorAll('[aria-selected]');
+
+                // Make sure only one choosin option element has aria-selected
+                expect($choosinOptionsSelected.length).to.equal(1);
+                // Value matches selected option
+                expect($choosin.dataset.value).to.equal($choosinOption.dataset.value);
+                // Visible UI text matches the selected option
+                expect($choosinOption.innerHtml).to.equal($trigger.innerHtml);
+                // Make sure $choosin's value and the select element's value match
+                expect($choosin.dataset.value).to.equal($select.value);
+              });
+          });
+        });
+    });
+  });
+
+  context('Search tests', () => {
+    it('Should show 5 options when "unit" is in search field, then clear button should reset', () => {
       cy.get('@trigger').click();
       cy.get('@choosin').then(($choosins) => {
         const $choosin = $choosins[0];
-        cy.get('.csn-search__textField', {'withinSubject': $choosin})
-          .type('unit')
+        cy.get(selectors.search.text, {'withinSubject': $choosin})
+          .as('searchText')
+          // Search for 'united'
+          .type('united')
           // Give the component time to search due to debounce
           .wait(500)
           .then(() => {
-            expect($choosin.querySelectorAll('.csn-optionList__option:not([hidden])').length).to.equal(5);
-          });
+            const $visibleOptions = $choosin.querySelectorAll('.csn-optionList__option:not([hidden])');
+            // Should see 5 results
+            expect($visibleOptions.length).to.equal(5);
+            // First option should have a highlight
+            expect($visibleOptions[0].classList.contains('csn-optionList__option--highlight')).to.be.true;
+          })
+          // @todo clear button test
       });
     });
   });
