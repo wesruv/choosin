@@ -21,12 +21,18 @@ Run watch and a local server
 npm start
 ```
 
-Run tests, no UI
+#### Testing with Cypress
+First time you use cypress:
+```
+npm run cypress install
+```
+
+To run tests with no UI:
 ```
 npm run test
 ```
 
-Run tests, with UI for development
+Run tests, with UI for development:
 ```
 npm run cypress open
 ```
