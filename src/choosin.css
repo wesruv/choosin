@@ -2,6 +2,7 @@
   --choosin__width: 15em;
   --choosin__border__color: #ccc;
   --choosin__background: #fff;
+  --choosin__color: #000;
   --choosin__zindex--open: 10;
 
   --choosin__arrow__color: currentColor;
@@ -149,6 +150,8 @@
   margin: 0.25em;
   padding-right: 2.25em;
   border: var(--choosin__search__borderWidth, 2px) solid var(--choosin__search__borderColor, #ccc);
+  color: var(--choosin__color, #000);
+  font-size: 12px;
 }
 .csn-search__textField:focus {
   outline: 0;

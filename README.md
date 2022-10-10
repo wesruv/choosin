@@ -4,6 +4,9 @@ A no dependency UI replacement for single value HTML select elements.
 ## Goal
 Provide a successor to chosen and select2 with great accessibility and modern Javascript and CSS.
 
+## Design Pattern to Replicate
+- [Combobox with autocomplete](https://www.w3.org/WAI/ARIA/apg/example-index/combobox/combobox-autocomplete-list.html)
+
 ## How to use
 @todo
 

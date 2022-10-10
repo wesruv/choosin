@@ -137,6 +137,9 @@ class Choosin {
 
       // Open the dropdown
       $choosin.setAttribute('open', '');
+      // Accessibility feature
+      this.elements.trigger.setAttribute('aria-expanded', 'true');
+
       const $optionSelected = this.state.get('optionSelected');
       // Highlight an option on open
       if ($optionSelected) {
@@ -177,6 +180,7 @@ class Choosin {
       if (document.activeElement.closest('.choosin')) {
         this.elements.trigger.focus();
       }
+      this.elements.trigger.setAttribute('aria-expanded', 'false');
     };
 
     // Do the thing!
@@ -378,11 +382,22 @@ class Choosin {
     $textField.setAttribute('type', 'text');
     $textField.classList.add('csn-search__textField');
     $textField.id = textFieldId;
+    // Accessibility features
+    // $textField.setAttribute('value', 'United States')
+    // $textField.setAttribute('role', 'combobox');
+    // $textField.setAttribute('aria-autocomplete', 'list');
+    // $textField.setAttribute('aria-controls', '');
 
     // Create clear button
     const $clearSearch = document.createElement('button');
     $clearSearch.classList.add('csn-search__clear');
+    // Accessibility features
+    $clearSearch.setAttribute('tabindex', '-1');
+    // @todo: translate?
+    $clearSearch.setAttribute('aria-label', 'Clear search');
+    // $clearSearch.setAttribute('aria-expanded', 'false');
     // @todo Translate?
+    //@todo: change from using .innerHTMl since it adds security issues
     $clearSearch.innerHTML = '<span class="visually-hidden">Clear search</span>';
     $clearSearch.addEventListener('click', () => {
       $textField.value = '';
@@ -505,7 +520,7 @@ class Choosin {
     $option.dataset.csnHash = hash;
 
     // Build & populate the choosin option element
-    const $choosinOption = document.createElement('button');
+    const $choosinOption = document.createElement('option');
     $choosinOption.dataset.csnHash = hash;
     $choosinOption.classList.add('csn-optionList__option');
     $choosinOption.dataset.value = value;
@@ -595,7 +610,7 @@ class Choosin {
     let $optionSelected = $select.querySelector('option[selected]');
     // Create the markup for the new element
     const $choosin = document.createElement('div');
-    const $trigger = document.createElement('button');
+    const $trigger = document.createElement('input');
     const $uiWrapper = document.createElement('div');
     const $searchWrapper = document.createElement('div');
     const $optionsList = document.createElement('ul');
@@ -613,8 +628,17 @@ class Choosin {
 
     $trigger.classList.add('choosin__trigger');
     $trigger.innerText = $optionSelected.innerText.trim();
+    // Accessibility features
+    // @todo: to translate?
+    $trigger.setAttribute('value', 'United States')
+    $trigger.setAttribute('role', 'combobox');
+    $trigger.setAttribute('aria-autocomplete', 'list');
+    $trigger.setAttribute('aria-controls', 'uiWrapper');
+    $trigger.setAttribute('aria-expanded', 'false');
 
     $uiWrapper.classList.add('choosin__uiWrapper');
+    // Accessibility feature
+    $uiWrapper.setAttribute('id', 'uiWrapper');
     $searchWrapper.classList.add('choosin__searchWrapper', 'csn-search');
     $optionsList.classList.add('choosin__optionsList', 'csn-optionList');
 
