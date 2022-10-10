@@ -211,6 +211,8 @@ class Choosin {
       $optionSelected.setAttribute('aria-selected', 'true');
       $choosin.dataset.value = value;
       $trigger.innerText = $optionSelected.innerText;
+      $trigger.value = $optionSelected.value;
+      $trigger.setAttribute('value', `${$optionSelected.value}`)
     }
     const optionsMap = this.state.get('optionsMap');
     if (optionsMap[hash] && optionsMap[hash].selectOption) optionsMap[hash].selectOption.setAttribute('selected', '');
@@ -492,10 +494,14 @@ class Choosin {
       case 'ArrowUp':
         event.preventDefault();
         this.navigateOptions(-1, $choosin);
+        // Accessiiblity feature
+        this.state.set('isOpen', true);
         break;
       case 'ArrowDown':
         event.preventDefault();
         this.navigateOptions(1, $choosin);
+        // Accessiiblity feature
+        this.state.set('isOpen', true);
         break;
       case 'Enter':
         event.preventDefault();
@@ -503,7 +509,6 @@ class Choosin {
         if ($optionHighlighted) {
           this.state.set('optionSelected', $optionHighlighted);
         }
-        break;
     }
   }
 
@@ -614,6 +619,8 @@ class Choosin {
     const $uiWrapper = document.createElement('div');
     const $searchWrapper = document.createElement('div');
     const $optionsList = document.createElement('ul');
+    // Accessibility features
+    $optionsList.setAttribute('tabindex', '0');
 
     $choosin.dataset.csnHash = generateRandomHash();
     $select.dataset.csnHash = $choosin.dataset.csnHash;
