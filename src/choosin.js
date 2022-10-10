@@ -139,6 +139,9 @@ class Choosin {
       $choosin.setAttribute('open', '');
       // Accessibility feature
       this.elements.trigger.setAttribute('aria-expanded', 'true');
+      this.elements.trigger.removeAttribute('tabindex');
+      this.elements.search.clear.setAttribute('tabindex', '0');
+      this.elements.optionsList.setAttribute('tabindex', '0');
 
       const $optionSelected = this.state.get('optionSelected');
       // Highlight an option on open
@@ -180,7 +183,11 @@ class Choosin {
       if (document.activeElement.closest('.choosin')) {
         this.elements.trigger.focus();
       }
+      // Accessibility features
       this.elements.trigger.setAttribute('aria-expanded', 'false');
+      this.elements.trigger.setAttribute('tabindex', '-1');
+      this.elements.search.clear.setAttribute('tabindex', '-1');
+      this.elements.optionsList.setAttribute('tabindex', '-1');
     };
 
     // Do the thing!
@@ -384,11 +391,6 @@ class Choosin {
     $textField.setAttribute('type', 'text');
     $textField.classList.add('csn-search__textField');
     $textField.id = textFieldId;
-    // Accessibility features
-    // $textField.setAttribute('value', 'United States')
-    // $textField.setAttribute('role', 'combobox');
-    // $textField.setAttribute('aria-autocomplete', 'list');
-    // $textField.setAttribute('aria-controls', '');
 
     // Create clear button
     const $clearSearch = document.createElement('button');
@@ -397,7 +399,6 @@ class Choosin {
     $clearSearch.setAttribute('tabindex', '-1');
     // @todo: translate?
     $clearSearch.setAttribute('aria-label', 'Clear search');
-    // $clearSearch.setAttribute('aria-expanded', 'false');
     // @todo Translate?
     //@todo: change from using .innerHTMl since it adds security issues
     $clearSearch.innerHTML = '<span class="visually-hidden">Clear search</span>';
@@ -620,7 +621,7 @@ class Choosin {
     const $searchWrapper = document.createElement('div');
     const $optionsList = document.createElement('ul');
     // Accessibility features
-    $optionsList.setAttribute('tabindex', '0');
+    $optionsList.setAttribute('tabindex', '-1');
 
     $choosin.dataset.csnHash = generateRandomHash();
     $select.dataset.csnHash = $choosin.dataset.csnHash;
