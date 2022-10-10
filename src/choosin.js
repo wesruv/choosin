@@ -160,12 +160,12 @@ class Choosin {
       }
 
       // Focus on text field if we have search
-      if (this.state.get('hasSearch')) {
-        const $searchText = $choosin.querySelector('.csn-search__textField');
-        if ($searchText) {
-          $searchText.focus();
-        }
-      }
+      // if (this.state.get('hasSearch')) {
+      //   const $searchText = $choosin.querySelector('.csn-search__textField');
+      //   if ($searchText) {
+      //     $searchText.focus();
+      //   }
+      // }
     }
 
     /**
@@ -621,6 +621,7 @@ class Choosin {
     const $searchWrapper = document.createElement('div');
     const $optionsList = document.createElement('ul');
     // Accessibility features
+    // @todo: KS, fix screen reader issues for ul
     $optionsList.setAttribute('tabindex', '-1');
 
     $choosin.dataset.csnHash = generateRandomHash();
