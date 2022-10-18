@@ -664,6 +664,7 @@ class Choosin {
       'choosinWrapper': $choosin,
       'optionsList': $optionsList,
       'trigger': $trigger,
+      'uiWrapper': $uiWrapper,
       'originalSelect': $select,
       'search': {
         'wrapper': $searchWrapper,
