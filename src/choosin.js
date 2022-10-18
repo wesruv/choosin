@@ -453,10 +453,9 @@ class Choosin {
     }
 
     // Get current location in the options
-    const optionHashesInOrder = this.state.get('optionHashesInOrder');
     const highlightedHash = $optionHighlighted.dataset.csnHash;
     const visibleOptionsInOrder = this.state.get('visibleOptionHashes');
-    const highlightedIndex = optionHashesInOrder.indexOf(highlightedHash);
+    const highlightedIndex = visibleOptionsInOrder.indexOf(highlightedHash);
     // Get the list of options
     const optionsMap = this.state.get('optionsMap');
 
