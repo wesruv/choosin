@@ -139,9 +139,11 @@ class Choosin {
       $choosin.setAttribute('open', '');
       // Accessibility feature
       this.elements.trigger.setAttribute('aria-expanded', 'true');
-      this.elements.trigger.removeAttribute('tabindex');
-      this.elements.search.clear.setAttribute('tabindex', '0');
-      this.elements.optionsList.setAttribute('tabindex', '0');
+      // this.elements.search.clear.setAttribute('tabindex', '0');
+      // this.elements.optionsList.setAttribute('tabindex', '0');
+      // this.elements.optionsList.setAttribute('aria-hidden', 'false');
+      this.elements.uiWrapper.setAttribute('tabindex', '0');
+      this.elements.uiWrapper.setAttribute('aria-hidden', 'false');
 
       const $optionSelected = this.state.get('optionSelected');
       // Highlight an option on open
@@ -185,9 +187,11 @@ class Choosin {
       }
       // Accessibility features
       this.elements.trigger.setAttribute('aria-expanded', 'false');
-      this.elements.trigger.setAttribute('tabindex', '-1');
-      this.elements.search.clear.setAttribute('tabindex', '-1');
-      this.elements.optionsList.setAttribute('tabindex', '-1');
+      // this.elements.search.clear.setAttribute('tabindex', '-1');
+      // this.elements.optionsList.setAttribute('tabindex', '-1');
+      // this.elements.optionsList.setAttribute('aria-hidden', 'true');
+      this.elements.uiWrapper.setAttribute('tabindex', '-1');
+      this.elements.uiWrapper.setAttribute('aria-hidden', 'true');
     };
 
     // Do the thing!
@@ -400,7 +404,7 @@ class Choosin {
     // @todo: translate?
     $clearSearch.setAttribute('aria-label', 'Clear search');
     // @todo Translate?
-    //@todo: change from using .innerHTMl since it adds security issues
+    //@todo: KS - change from using .innerHTMl since it adds security issues, suggest to switch to .textContent
     $clearSearch.innerHTML = '<span class="visually-hidden">Clear search</span>';
     $clearSearch.addEventListener('click', () => {
       $textField.value = '';
@@ -621,7 +625,13 @@ class Choosin {
     const $optionsList = document.createElement('ul');
     // Accessibility features
     // @todo: KS, fix screen reader issues for ul
-    $optionsList.setAttribute('tabindex', '-1');
+    // $optionsList.setAttribute('tabindex', '-1');
+    // $optionsList.setAttribute('aria-hidden', 'true');
+    $uiWrapper.setAttribute('tabindex', '-1');
+    $uiWrapper.setAttribute('aria-hidden', 'true');
+    $optionsList.setAttribute('role', 'listbox');
+    // @todo: translate
+    $optionsList.setAttribute('aria-label', 'Countries');
 
     $choosin.dataset.csnHash = generateRandomHash();
     $select.dataset.csnHash = $choosin.dataset.csnHash;
