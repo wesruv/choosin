@@ -144,6 +144,8 @@ class Choosin {
       // this.elements.optionsList.setAttribute('aria-hidden', 'false');
       this.elements.uiWrapper.setAttribute('tabindex', '0');
       this.elements.uiWrapper.setAttribute('aria-hidden', 'false');
+      
+      this.elements.option.setAttribute('aria-hidden', 'false');
 
       const $optionSelected = this.state.get('optionSelected');
       // Highlight an option on open
@@ -151,9 +153,11 @@ class Choosin {
         // Choose the selected option, if there is one
         this.state.set('optionHighlighted', $optionSelected);
         this.makeSureOptionIsVisible($optionSelected, false);
+        $optionSelected.setAttribute('aria-selected', 'true'); // Accessibility feature
       }
       else {
         this.log('error', 'There isn\'t a selected option, which shouldn\'t happen.');
+        $optionSelected.removeAttribute('aria-selected'); // Accessibility feature
         // // Otherwise get the first visible option
         // const visibleOptionHashes = this.state.get('visibleOptionHashes');
         // const optionsMap = this.state.get('optionsMap');
@@ -505,6 +509,7 @@ class Choosin {
         event.preventDefault();
         this.navigateOptions(1, $choosin);
         // Accessiiblity feature
+        
         this.state.set('isOpen', true);
         break;
       case 'Enter':
@@ -530,6 +535,8 @@ class Choosin {
 
     // Build & populate the choosin option element
     const $choosinOption = document.createElement('option');
+    // Accessibility feature - role: option
+    $choosinOption.setAttribute('role', 'option');
     $choosinOption.dataset.csnHash = hash;
     $choosinOption.classList.add('csn-optionList__option');
     $choosinOption.dataset.value = value;
@@ -585,6 +592,7 @@ class Choosin {
         const $choosinOption = this.processOption($element);
         const hash = $choosinOption.dataset.csnHash;
         optionHashesInOrder.push(hash);
+        // @todo: KS fix screen reader issue with LIs and nested option tags. Screen reader is not reading out the options as you move through the list with the arrow keys
         const $liWrapper = document.createElement('li');
         $liWrapper.classList.add('csn-optionList__item-wrapper');
 
@@ -625,7 +633,7 @@ class Choosin {
     const $optionsList = document.createElement('ul');
     // Accessibility features
     // @todo: KS, fix screen reader issues for ul
-    // $optionsList.setAttribute('tabindex', '-1');
+    $optionsList.setAttribute('tabindex', '0');
     // $optionsList.setAttribute('aria-hidden', 'true');
     $uiWrapper.setAttribute('tabindex', '-1');
     $uiWrapper.setAttribute('aria-hidden', 'true');
