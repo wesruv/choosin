@@ -7,6 +7,8 @@ Provide a successor to chosen and select2 with great accessibility and modern Ja
 ## Design Pattern to Replicate
 - [Combobox with autocomplete](https://www.w3.org/WAI/ARIA/apg/example-index/combobox/combobox-autocomplete-list.html)
 
+- [Codepen example](https://codepen.io/kelsS/pen/wvXvEKW/8dd3aed6aebf70992f27f916715c5bf3?editors=0010)
+
 ## How to use
 @todo
 

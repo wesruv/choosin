@@ -145,7 +145,7 @@ class Choosin {
       this.elements.uiWrapper.setAttribute('tabindex', '0');
       this.elements.uiWrapper.setAttribute('aria-hidden', 'false');
       
-      this.elements.option.setAttribute('aria-hidden', 'false');
+      //this.elements.option.setAttribute('aria-hidden', 'false');
 
       const $optionSelected = this.state.get('optionSelected');
       // Highlight an option on open
@@ -230,7 +230,7 @@ class Choosin {
       $trigger.setAttribute('value', `${$optionSelected.value}`)
     }
     const optionsMap = this.state.get('optionsMap');
-    if (optionsMap[hash] && optionsMap[hash].selectOption) optionsMap[hash].selectOption.setAttribute('selected', '');
+    if (optionsMap[hash] && optionsMap[hash].selectOption) optionsMap[hash].selectOption.setAttribute('selected', '') && optionsMap[hash].selectOption.setAttribute('aria-selected', '');// added aria-selected, required for screen readers to work properly
     this.state.set('isOpen', false);
   };
 
@@ -403,12 +403,11 @@ class Choosin {
     // Create clear button
     const $clearSearch = document.createElement('button');
     $clearSearch.classList.add('csn-search__clear');
-    // Accessibility features
-    $clearSearch.setAttribute('tabindex', '-1');
+    $clearSearch.setAttribute('tabindex', '-1'); // Accessibility features
     // @todo: translate?
     $clearSearch.setAttribute('aria-label', 'Clear search');
     // @todo Translate?
-    //@todo: KS - change from using .innerHTMl since it adds security issues, suggest to switch to .textContent
+    //@todo: KS - suggest to change from using .innerHTMl since it adds security issues
     $clearSearch.innerHTML = '<span class="visually-hidden">Clear search</span>';
     $clearSearch.addEventListener('click', () => {
       $textField.value = '';
@@ -502,15 +501,13 @@ class Choosin {
       case 'ArrowUp':
         event.preventDefault();
         this.navigateOptions(-1, $choosin);
-        // Accessiiblity feature
-        this.state.set('isOpen', true);
+        this.document.activeElement.focus()
         break;
       case 'ArrowDown':
         event.preventDefault();
         this.navigateOptions(1, $choosin);
-        // Accessiiblity feature
         
-        this.state.set('isOpen', true);
+        this.document.activeElement.focus()
         break;
       case 'Enter':
         event.preventDefault();
@@ -534,7 +531,7 @@ class Choosin {
     $option.dataset.csnHash = hash;
 
     // Build & populate the choosin option element
-    const $choosinOption = document.createElement('option');
+    const $choosinOption = document.createElement('li');
     // Accessibility feature - role: option
     $choosinOption.setAttribute('role', 'option');
     $choosinOption.dataset.csnHash = hash;
@@ -592,9 +589,6 @@ class Choosin {
         const $choosinOption = this.processOption($element);
         const hash = $choosinOption.dataset.csnHash;
         optionHashesInOrder.push(hash);
-        // @todo: KS fix screen reader issue with LIs and nested option tags. Screen reader is not reading out the options as you move through the list with the arrow keys
-        const $liWrapper = document.createElement('li');
-        $liWrapper.classList.add('csn-optionList__item-wrapper');
 
         // Add data to our data arrays and objects
         optionsMap[hash] = {
@@ -605,8 +599,7 @@ class Choosin {
         }
 
         // Add the choosin option to the $choosin element
-        $liWrapper.append($choosinOption);
-        $optionsList.append($liWrapper);
+        $optionsList.append($choosinOption);
       }
     }
 
@@ -655,20 +648,19 @@ class Choosin {
     $trigger.classList.add('choosin__trigger');
     $trigger.innerText = $optionSelected.innerText.trim();
     // Accessibility features
-    // @todo: to translate?
-    $trigger.setAttribute('value', 'United States')
     $trigger.setAttribute('role', 'combobox');
     $trigger.setAttribute('aria-autocomplete', 'list');
     $trigger.setAttribute('aria-controls', 'uiWrapper');
     $trigger.setAttribute('aria-expanded', 'false');
 
-    $uiWrapper.classList.add('choosin__uiWrapper');
+   // $uiWrapper.classList.add('choosin__uiWrapper');
     // Accessibility feature
     $uiWrapper.setAttribute('id', 'uiWrapper');
     $searchWrapper.classList.add('choosin__searchWrapper', 'csn-search');
     $optionsList.classList.add('choosin__optionsList', 'csn-optionList');
 
     $uiWrapper.append($searchWrapper, $optionsList);
+    //$optionsList.append($choosinOption); // @todo: set option lis as children of ul wrapper, remove extra li wrapper. Aria, etc.. needs to go on the li not on an option in the li
     $choosin.append($trigger, $uiWrapper);
 
     /**
