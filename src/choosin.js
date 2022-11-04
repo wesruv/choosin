@@ -34,10 +34,10 @@ class Choosin {
       'optionSelectedCallback',
       'makeSureOptionIsVisible',
       'optionHighlightedCallback',
-      'setupTrigger',
+      'setupDropdownToggle',
       'showAllOptions',
       'searchCallback',
-      'addSearch',
+      'setupSearch',
       'navigateOptions',
       'keyboardHandler',
       'processSelectChildren',
@@ -48,11 +48,6 @@ class Choosin {
     methodsToBind.forEach((method) => this[method] = this[method].bind(this));
 
     const $choosin = this.createChoosinFromSelect($select);
-
-    if (!window.choosin) {
-      // On document clicks, close any choosins that aren't in the click's path
-      document.addEventListener('click', this.documentClick);
-    }
 
     window.choosin = window.choosin || {};
     window.choosin.elements = window.choosin.elements || {};
@@ -96,13 +91,13 @@ class Choosin {
         dropdownDirection = 'up';
         // Getting distance from the top of the choosin wrapper to the top of optionList
         let offsetFromElements = $choosin.offsetHeight;
-        const $searchWrapper = this.elements?.search?.wrapper;
-        if ($searchWrapper && $searchWrapper.offsetHeight) {
-          // Count the search offset twice
-          // The first time is because everything's rendered downward, and we're getting the location of the top of the choosin wrapper
-          // A second time to get the right height for the optionList, the search will be inbetween the top of the choosin wrapper, and the optionlist
-          offsetFromElements += $searchWrapper.offsetHeight * 2;
-        }
+        // const $searchWrapper = this.elements?.search?.wrapper;
+        // if ($searchWrapper && $searchWrapper.offsetHeight) {
+        //   // Count the search offset twice
+        //   // The first time is because everything's rendered downward, and we're getting the location of the top of the choosin wrapper
+        //   // A second time to get the right height for the optionList, the search will be inbetween the top of the choosin wrapper, and the optionlist
+        //   offsetFromElements += $searchWrapper.offsetHeight * 2;
+        // }
         dropdownHeight = Math.floor(optionsListBoundingClientRect.top - offsetFromElements) - 20;
       }
       else {
@@ -133,18 +128,22 @@ class Choosin {
      * Private utility function because it shouldn't be called directly
      */
     const _open = () => {
-      this.setDropdownHeightAndDirection($choosin);
+      // @todo Fix this function
+      // this.setDropdownHeightAndDirection($choosin);
+
+      document.addEventListener('click', this.documentClick);
 
       // Open the dropdown
       $choosin.setAttribute('open', '');
       // Accessibility feature
-      this.elements.trigger.setAttribute('aria-expanded', 'true');
+      this.elements.search.setAttribute('aria-expanded', 'true');
+      this.elements.dropdownToggle.setAttribute('aria-expanded', 'true');
       // this.elements.search.clear.setAttribute('tabindex', '0');
       // this.elements.optionsList.setAttribute('tabindex', '0');
       // this.elements.optionsList.setAttribute('aria-hidden', 'false');
-      this.elements.uiWrapper.setAttribute('tabindex', '0');
-      this.elements.uiWrapper.setAttribute('aria-hidden', 'false');
-      
+      this.elements.optionsList.setAttribute('tabindex', '0');
+      this.elements.optionsList.setAttribute('aria-hidden', 'false');
+
       //this.elements.option.setAttribute('aria-hidden', 'false');
 
       const $optionSelected = this.state.get('optionSelected');
@@ -180,6 +179,7 @@ class Choosin {
      */
     const _close = () => {
       $choosin.removeAttribute('open');
+      document.removeEventListener('click', this.documentClick);
       // Remove state that doesn't apply when closed
       this.state.set('optionHighlighted', null);
       this.state.set('dropdownDirection', 'none');
@@ -187,15 +187,16 @@ class Choosin {
       this.elements.optionsList.scrollTo({'top': 0});
       // Focus the trigger per a11y best practices, assuming something else hasn't been focused
       if (document.activeElement.closest('.choosin')) {
-        this.elements.trigger.focus();
+        this.elements.dropdownToggle.focus();
       }
       // Accessibility features
-      this.elements.trigger.setAttribute('aria-expanded', 'false');
+      this.elements.search.setAttribute('aria-expanded', 'false');
+      this.elements.dropdownToggle.setAttribute('aria-expanded', 'false');
       // this.elements.search.clear.setAttribute('tabindex', '-1');
       // this.elements.optionsList.setAttribute('tabindex', '-1');
       // this.elements.optionsList.setAttribute('aria-hidden', 'true');
-      this.elements.uiWrapper.setAttribute('tabindex', '-1');
-      this.elements.uiWrapper.setAttribute('aria-hidden', 'true');
+      this.elements.optionsList.setAttribute('tabindex', '-1');
+      this.elements.optionsList.setAttribute('aria-hidden', 'true');
     };
 
     // Do the thing!
@@ -216,18 +217,20 @@ class Choosin {
     const value = $optionSelected.dataset.value;
     const hash = $optionSelected.dataset.csnHash;
     const $choosin = this.elements.choosinWrapper;
+    const $search = this.elements.search;
     if (!value) {
       this.log('error', 'Option selected, but it is missing a value', $optionSelected);
       return;
     }
-    const $trigger = this.elements.trigger;
     if (value && $optionSelected !== $optionWasSelected) {
       if ($optionWasSelected) $optionWasSelected.removeAttribute('aria-selected');
       $optionSelected.setAttribute('aria-selected', 'true');
       $choosin.dataset.value = value;
-      $trigger.innerText = $optionSelected.innerText;
-      $trigger.value = $optionSelected.value;
-      $trigger.setAttribute('value', `${$optionSelected.value}`)
+      if (document.activeElement === this.elements.search) {
+        this.elements.search.blur();
+      }
+      $search.value = $optionSelected.innerText.trim();
+      this.elements.dropdownToggle.focus();
     }
     const optionsMap = this.state.get('optionsMap');
     if (optionsMap[hash] && optionsMap[hash].selectOption) optionsMap[hash].selectOption.setAttribute('selected', '') && optionsMap[hash].selectOption.setAttribute('aria-selected', '');// added aria-selected, required for screen readers to work properly
@@ -293,14 +296,14 @@ class Choosin {
   /**
    * Validates and sets up trigger (the always visible dropdown UI)
    */
-  setupTrigger() {
+  setupDropdownToggle() {
     const $choosin = this.elements.choosinWrapper;
-    const $trigger = this.elements.trigger;
-    if (!$trigger) {
-      this.log('error', 'Couldn\'t get $trigger element from the $choosin element', $choosin);
-    }
+    const $dropdownToggle = this.elements.dropdownToggle;
 
-    $trigger.addEventListener('click', (event) => {
+    $dropdownToggle.id = `csn-dropdownToggle--${$choosin.dataset.csnHash}`;
+    $dropdownToggle.setAttribute('aria-controls', this.elements.optionsList.id);
+    $dropdownToggle.setAttribute('aria-expanded', false);
+    $dropdownToggle.addEventListener('click', (event) => {
       event.preventDefault();
       const isOpen = this.state.get('isOpen');
       this.state.set('isOpen', !isOpen);
@@ -330,30 +333,30 @@ class Choosin {
    * Searches options for textField.value
    */
   searchCallback() {
-    const $textField = this.elements.search.text;
+    const $search = this.elements.search;
     const optionHashesInOrder = this.state.get('optionHashesInOrder');
     const optionsMap = this.state.get('optionsMap');
     const previousSearch = this.state.get('previousSearch');
-    let searchString = $textField.value;
+    let searchQuery = $search.value;
 
-    if (typeof searchString === 'string') {
-      searchString = searchString.trim().toLowerCase();
+    if (typeof searchQuery === 'string') {
+      searchQuery = searchQuery.trim().toLowerCase();
     }
 
     // Don't run search if the query hasn't changed
-    if (previousSearch === searchString) {
-      this.log('log', 'Search aborted, the search value hasn\'t changed', {previousSearch, searchString});
+    if (previousSearch === searchQuery) {
+      this.log('log', 'Search aborted, the search value hasn\'t changed', {previousSearch, searchQuery});
       return;
     }
 
     // Show everything if search is blank
-    if (!searchString) {
+    if (!searchQuery) {
       this.log('log', 'Search empty, showing all options.');
       this.showAllOptions();
       return;
     }
-    this.log('log', 'Starting search', {previousSearch, searchString});
-    this.state.set('previousSearch', searchString);
+    this.log('log', 'Starting search', {previousSearch, searchQuery});
+    this.state.set('previousSearch', searchQuery);
     // If we have a string show matches and hide misses
     const visibleOptionHashes = [];
     let isFirstMatch = true;
@@ -362,7 +365,7 @@ class Choosin {
       const optionData = optionsMap[hash];
       const searchString = optionData.searchString;
       const $option = optionData.choosinOption;
-      const isMatch = searchString.indexOf($textField.value) >= 0;
+      const isMatch = searchString.indexOf(searchQuery) >= 0;
       if (isMatch) {
         // Make sure it's visible
         if ($option.hidden) $option.hidden = false;
@@ -386,33 +389,47 @@ class Choosin {
    * Adds and sets up options search
    * @param {HTMLElement} $choosin The outer wrapper of a choosin element
    */
-  addSearch() {
+  setupSearch() {
     if (this.state.get('hasSearch') === true) return;
 
-    const $searchWrapper = this.elements.search.wrapper;
+    const $search = this.elements.search;
+    const $optionSelected = this.state.get('optionSelected');
+    if (!$search) {
+      this.log('error', 'Couldn\'t get $search element from the $choosin element', $choosin);
+    }
 
-    const hash = generateRandomHash();
-    const textFieldId = `csn-searchText-${hash}`;
+    // Hash to create ID for HTML ID's in form
+    // const hash = generateRandomHash();
 
-    // Create textfield
-    const $textField = document.createElement('input');
-    $textField.setAttribute('type', 'text');
-    $textField.classList.add('csn-search__textField');
-    $textField.id = textFieldId;
+    $search.addEventListener('click', (event) => {
+      event.preventDefault();
+      // const isOpen = this.state.get('isOpen');
+      // this.state.set('isOpen', !isOpen);
+      // @todo Think a click in the search box should always open the dropdown now
+      this.state.set('isOpen', true);
+    });
+
+    $search.classList.add('choosin__searchBox');
+    $search.value = $optionSelected.innerText.trim();
+    // Accessibility features
+    $search.setAttribute('role', 'combobox');
+    $search.setAttribute('aria-autocomplete', 'list');
+    $search.setAttribute('aria-controls', this.elements.optionsList.id);
+    $search.setAttribute('aria-expanded', 'false');
 
     // Create clear button
-    const $clearSearch = document.createElement('button');
-    $clearSearch.classList.add('csn-search__clear');
-    $clearSearch.setAttribute('tabindex', '-1'); // Accessibility features
-    // @todo: translate?
-    $clearSearch.setAttribute('aria-label', 'Clear search');
-    // @todo Translate?
-    //@todo: KS - suggest to change from using .innerHTMl since it adds security issues
-    $clearSearch.innerHTML = '<span class="visually-hidden">Clear search</span>';
-    $clearSearch.addEventListener('click', () => {
-      $textField.value = '';
-      this.showAllOptions();
-    });
+    // const $clearSearch = document.createElement('button');
+    // $clearSearch.classList.add('csn-search__clear');
+    // $clearSearch.setAttribute('tabindex', '-1'); // Accessibility features
+    // // @todo: translate?
+    // $clearSearch.setAttribute('aria-label', 'Clear search');
+    // // @todo Translate?
+    // //@todo: KS - suggest to change from using .innerHTMl since it adds security issues
+    // $clearSearch.innerHTML = '<span class="visually-hidden">Clear search</span>';
+    // $clearSearch.addEventListener('click', () => {
+    //   $textField.value = '';
+    //   this.showAllOptions();
+    // });
 
     // Default visible options to all options
     this.state.set('visibleOptionHashes', this.state.get('optionHashesInOrder'));
@@ -421,25 +438,14 @@ class Choosin {
      * Make sure search can't be called too often
      */
     const debouncedSearch = debounce(
-      () => this.searchCallback($textField),
+      () => this.searchCallback($search),
       250
     );
     // Trigger search if the value changes and as the user types
-    $textField.addEventListener('change', () => debouncedSearch());
-    $textField.addEventListener('keydown', () => debouncedSearch());
+    $search.addEventListener('change', () => debouncedSearch());
+    $search.addEventListener('keydown', () => debouncedSearch());
 
-    // Create label
-    const $textLabel = document.createElement('label');
-    $textLabel.classList.add('csn-search__textLabel', 'visually-hidden');
-    $textLabel.setAttribute('for', textFieldId);
-    // @todo Translate?
-    $textLabel.innerText = 'Search the options in the dropdown';
-
-    // Add them to the DOM
-    $searchWrapper.append($textLabel, $textField, $clearSearch);
-
-    this.elements.search.text = $textField;
-    this.elements.search.clear = $clearSearch;
+    // this.elements.search.clear = $clearSearch;
 
     this.state.set('hasSearch', true);
   }
@@ -501,13 +507,13 @@ class Choosin {
       case 'ArrowUp':
         event.preventDefault();
         this.navigateOptions(-1, $choosin);
-        this.document.activeElement.focus()
+        // this.document.activeElement.focus()
         break;
       case 'ArrowDown':
         event.preventDefault();
         this.navigateOptions(1, $choosin);
-        
-        this.document.activeElement.focus()
+
+        // this.document.activeElement.focus()
         break;
       case 'Enter':
         event.preventDefault();
@@ -616,23 +622,39 @@ class Choosin {
   createChoosinFromSelect($select) {
     if ($select.classList.contains('choosin--hide')) return;
 
+    // Check for required HTML elements
+    if (!$select.id) {
+      this.log('error', 'Select element requires an id and a label element with the for attribute pointed at the select\'s id.', $select);
+      return;
+    }
+    const $selectLabel = document.querySelector(`label[for='${$select.id}']`);
+    if (!$selectLabel) {
+      this.log('error', 'Couldn\'t find label pointed at select\'s ID. Select element requires an id and a label element with the for attribute pointed at the select\'s id.', $select);
+      return;
+    }
+
     // Get a selected element
     let $optionSelected = $select.querySelector('option[selected]');
+
     // Create the markup for the new element
     const $choosin = document.createElement('div');
-    const $trigger = document.createElement('input');
-    const $uiWrapper = document.createElement('div');
-    const $searchWrapper = document.createElement('div');
+    const $search = document.createElement('input');
+    const $dropdownToggle = document.createElement('button');
     const $optionsList = document.createElement('ul');
+
     // Accessibility features
     // @todo: KS, fix screen reader issues for ul
     $optionsList.setAttribute('tabindex', '0');
     // $optionsList.setAttribute('aria-hidden', 'true');
-    $uiWrapper.setAttribute('tabindex', '-1');
-    $uiWrapper.setAttribute('aria-hidden', 'true');
+    $optionsList.setAttribute('tabindex', '-1');
+    $optionsList.setAttribute('aria-hidden', 'true');
     $optionsList.setAttribute('role', 'listbox');
-    // @todo: translate
-    $optionsList.setAttribute('aria-label', 'Countries');
+
+    $dropdownToggle.classList.add('choosin__dropdownToggle');
+    // @todo Translate
+    $dropdownToggle.innerHTML =
+      `<span class="choosin__toggle-text choosin__toggle-text--is-closed">Show options</span>
+      <span class="choosin__toggle-text choosin__toggle-text--is-open">Hide options</span>`;
 
     $choosin.dataset.csnHash = generateRandomHash();
     $select.dataset.csnHash = $choosin.dataset.csnHash;
@@ -645,23 +667,17 @@ class Choosin {
     $choosin.classList.add('choosin');
     $choosin.dataset.value = $optionSelected.value;
 
-    $trigger.classList.add('choosin__trigger');
-    $trigger.innerText = $optionSelected.innerText.trim();
-    // Accessibility features
-    $trigger.setAttribute('role', 'combobox');
-    $trigger.setAttribute('aria-autocomplete', 'list');
-    $trigger.setAttribute('aria-controls', 'uiWrapper');
-    $trigger.setAttribute('aria-expanded', 'false');
-
-   // $uiWrapper.classList.add('choosin__uiWrapper');
-    // Accessibility feature
-    $uiWrapper.setAttribute('id', 'uiWrapper');
-    $searchWrapper.classList.add('choosin__searchWrapper', 'csn-search');
+    $optionsList.id = `csn-optionList--${$choosin.dataset.csnHash}`;
     $optionsList.classList.add('choosin__optionsList', 'csn-optionList');
+    $choosin.append($search, $dropdownToggle, $optionsList);
+    $selectLabel.setAttribute('for', $optionsList.id);
 
-    $uiWrapper.append($searchWrapper, $optionsList);
-    //$optionsList.append($choosinOption); // @todo: set option lis as children of ul wrapper, remove extra li wrapper. Aria, etc.. needs to go on the li not on an option in the li
-    $choosin.append($trigger, $uiWrapper);
+    $selectLabel.addEventListener('click', (event) => {
+      event.preventDefault();
+      this.elements.search.focus();
+      this.elements.search.select();
+      this.state.set('isOpen', true);
+    });
 
     /**
      * Elements reference
@@ -673,12 +689,10 @@ class Choosin {
     this.elements = {
       'choosinWrapper': $choosin,
       'optionsList': $optionsList,
-      'trigger': $trigger,
-      'uiWrapper': $uiWrapper,
+      'dropdownToggle': $dropdownToggle,
+      'search': $search,
       'originalSelect': $select,
-      'search': {
-        'wrapper': $searchWrapper,
-      },
+      'selectLabel': $selectLabel,
     };
 
     /**
@@ -758,8 +772,8 @@ class Choosin {
 
     // Make the elements and wire them in
     this.processSelectChildren($select, $choosin);
-    this.setupTrigger($choosin);
-    this.addSearch($choosin);
+    this.setupDropdownToggle($choosin);
+    this.setupSearch($choosin);
 
     // Update elements with classes that show we've processed the elements
     $choosin.classList.add('choosin--processed');
@@ -787,6 +801,9 @@ class Choosin {
       if ($element && $element.classList && $element.classList.contains('choosin')) {
         $choosinInPath = $element;
         break;
+      }
+      else if ($element === this.elements.selectLabel) {
+        $choosinInPath = this.elements.choosinWrapper;
       }
     }
 
