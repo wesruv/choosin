@@ -67,7 +67,7 @@
 }
 
 .choosin__searchBox,
-.csn-optionList__option,
+.csn-optionsList__option,
 .csn-search__clear {
   margin: 0;
   padding: 0;
@@ -206,8 +206,8 @@
 /**
  * Dropdown
  */
-.csn-optionList {
-  position: relative;
+.csn-optionsList {
+  position: absolute;
   height: min-content;
   /* Respect max-height from JS, then the non-JS variable */
   max-height: var(
@@ -223,7 +223,7 @@
   overflow-y: auto;
   list-style: none;
 }
-/* .csn-optionList:before {
+/* .csn-optionsList:before {
     content: '';
     position: absolute;
     top: 0;
@@ -234,13 +234,13 @@
     border: 1px solid rgba(0, 255, 0, 0.25);
 } */
 
-.csn-optionList__option {
+.csn-optionsList__option {
   display: block;
   width: 100%;
   padding-block: 0.25em;
   padding-inline-start: 0.5em;
 }
 
-.csn-optionList__option--highlight {
+.csn-optionsList__option--highlight {
   background: var(--choosin__background--highlight, #c4ecff);
 }

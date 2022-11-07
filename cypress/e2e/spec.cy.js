@@ -7,8 +7,8 @@ const selectors = {
   'trigger': '.choosin__dropdownToggle',
   'optionList': '.choosin__optionsList',
   'choosinOption': {
-    'default': '.csn-optionList__option',
-    'highlighted': '.csn-optionList__option--highlight',
+    'default': '.csn-optionsList__option',
+    'highlighted': '.csn-optionsList__option--highlight',
     'selected': '[aria-selected]',
   },
   'search': {
@@ -19,7 +19,7 @@ const selectors = {
   },
 };
 
-const getHighlightedHash = ($choosin) => $choosin.querySelector('.csn-optionList__option--highlight').dataset.csnHash;
+const getHighlightedHash = ($choosin) => $choosin.querySelector('.csn-optionsList__option--highlight').dataset.csnHash;
 
 describe('Choosin Tests', () => {
   beforeEach(() => {
@@ -212,11 +212,11 @@ describe('Choosin Tests', () => {
           // Give the component time to search due to debounce
           .wait(500)
           .then(() => {
-            const $visibleOptions = $choosin.querySelectorAll('.csn-optionList__option:not([hidden])');
+            const $visibleOptions = $choosin.querySelectorAll('.csn-optionsList__option:not([hidden])');
             // Should see 5 results
             expect($visibleOptions.length).to.equal(5);
             // First option should have a highlight
-            expect($visibleOptions[0].classList.contains('csn-optionList__option--highlight')).to.be.true;
+            expect($visibleOptions[0].classList.contains('csn-optionsList__option--highlight')).to.be.true;
           })
           // @todo clear button test
       });

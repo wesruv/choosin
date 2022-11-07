@@ -80,35 +80,25 @@ class Choosin {
     const $choosin = this.elements.choosinWrapper;
 
     // Set dropdown direction and dropdown height depending on page position and size
-    const optionsListBoundingClientRect = this.elements.optionsList.getBoundingClientRect();
+    const choosinBoundingClientRect = $choosin.getBoundingClientRect();
     let dropdownDirection;
     let dropdownHeight;
 
     // See if dropdown would go off of the page
-    if (optionsListBoundingClientRect.top + optionsListBoundingClientRect.height > window.innerHeight) {
-      // Set direction of dropdown based on it's position
-      if (optionsListBoundingClientRect.top > window.innerHeight / 2) {
-        dropdownDirection = 'up';
-        // Getting distance from the top of the choosin wrapper to the top of optionList
-        let offsetFromElements = $choosin.offsetHeight;
-        // const $searchWrapper = this.elements?.search?.wrapper;
-        // if ($searchWrapper && $searchWrapper.offsetHeight) {
-        //   // Count the search offset twice
-        //   // The first time is because everything's rendered downward, and we're getting the location of the top of the choosin wrapper
-        //   // A second time to get the right height for the optionList, the search will be inbetween the top of the choosin wrapper, and the optionlist
-        //   offsetFromElements += $searchWrapper.offsetHeight * 2;
-        // }
-        dropdownHeight = Math.floor(optionsListBoundingClientRect.top - offsetFromElements) - 20;
-      }
-      else {
-        dropdownDirection = 'down';
-        dropdownHeight = Math.floor(window.innerHeight - optionsListBoundingClientRect.top) - 20;
-      }
-
-      // Set dropdownDirection state
-      this.state.set('dropdownDirection', dropdownDirection);
-      $choosin.style.setProperty('--js-choosin__optionList__maxHeight', `${dropdownHeight}px`);
+    // Set direction of dropdown based on it's position
+    if (choosinBoundingClientRect.top > window.innerHeight / 2) {
+      dropdownDirection = 'up';
+      // Getting distance from the top of the choosin wrapper to the top of optionList
+      dropdownHeight = Math.floor(choosinBoundingClientRect.top - choosinBoundingClientRect.height) - 20;
     }
+    else {
+      dropdownDirection = 'down';
+      dropdownHeight = Math.floor(window.innerHeight - choosinBoundingClientRect.top - choosinBoundingClientRect.height) - 20;
+    }
+
+    // Set dropdownDirection state
+    this.state.set('dropdownDirection', dropdownDirection);
+    $choosin.style.setProperty('--js-choosin__optionList__maxHeight', `${dropdownHeight}px`);
   }
 
   /**
@@ -128,8 +118,7 @@ class Choosin {
      * Private utility function because it shouldn't be called directly
      */
     const _open = () => {
-      // @todo Fix this function
-      // this.setDropdownHeightAndDirection($choosin);
+      this.setDropdownHeightAndDirection($choosin);
 
       document.addEventListener('click', this.documentClick);
 
@@ -210,8 +199,8 @@ class Choosin {
 
   /**
    * Handler for an option being selected
-   * @param {HTMLElement} $optionSelected A .csn-optionList__option element
-   * @param {HTMLElement} $optionWasSelected A .csn-optionList__option element
+   * @param {HTMLElement} $optionSelected A .csn-optionsList__option element
+   * @param {HTMLElement} $optionWasSelected A .csn-optionsList__option element
    */
   optionSelectedCallback($optionSelected, $optionWasSelected) {
     const value = $optionSelected.dataset.value;
@@ -239,7 +228,7 @@ class Choosin {
 
   /**
    * Makes sure given option is in view of scrolling options
-   * @param {HTMLElement} $option A .csn-optionList__option element
+   * @param {HTMLElement} $option A .csn-optionsList__option element
    * @param {boolean} smoothScroll Set to true to smooth scroll
    */
   makeSureOptionIsVisible($option, smoothScroll) {
@@ -278,11 +267,11 @@ class Choosin {
 
   /**
    * Highlight an option to indicate pointer, touch, or keyboard interaction
-   * @param {HTMLElement} $optionToHighlight A .csn-optionList__option element
-   * @param {HTMLElement} $optionWasHighlighted A .csn-optionList__option element
+   * @param {HTMLElement} $optionToHighlight A .csn-optionsList__option element
+   * @param {HTMLElement} $optionWasHighlighted A .csn-optionsList__option element
    */
   optionHighlightedCallback($optionToHighlight, $optionWasHighlighted) {
-    const highlightClass = 'csn-optionList__option--highlight';
+    const highlightClass = 'csn-optionsList__option--highlight';
     if ($optionToHighlight !== $optionWasHighlighted) {
       if ($optionWasHighlighted) {
         $optionWasHighlighted.classList.remove(highlightClass);
@@ -461,7 +450,7 @@ class Choosin {
     if (!$optionHighlighted) {
       this.log('warn', 'Couldn\'t determine what element was highlighted', {$choosin, $optionHighlighted});
       // Highlight the first option
-      this.state.set('optionHighlighted', $choosin.querySelector('.csn-optionList__option'));
+      this.state.set('optionHighlighted', $choosin.querySelector('.csn-optionsList__option'));
       return;
     }
 
@@ -541,7 +530,7 @@ class Choosin {
     // Accessibility feature - role: option
     $choosinOption.setAttribute('role', 'option');
     $choosinOption.dataset.csnHash = hash;
-    $choosinOption.classList.add('csn-optionList__option');
+    $choosinOption.classList.add('csn-optionsList__option');
     $choosinOption.dataset.value = value;
     $choosinOption.innerText = $option.innerText.trim();
 
@@ -667,8 +656,8 @@ class Choosin {
     $choosin.classList.add('choosin');
     $choosin.dataset.value = $optionSelected.value;
 
-    $optionsList.id = `csn-optionList--${$choosin.dataset.csnHash}`;
-    $optionsList.classList.add('choosin__optionsList', 'csn-optionList');
+    $optionsList.id = `csn-optionsList--${$choosin.dataset.csnHash}`;
+    $optionsList.classList.add('choosin__optionsList', 'csn-optionsList');
     $choosin.append($search, $dropdownToggle, $optionsList);
     $selectLabel.setAttribute('for', $optionsList.id);
 
