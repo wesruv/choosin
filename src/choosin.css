@@ -44,10 +44,13 @@
 .choosin--processed {
   position: relative;
   display: flex;
-  flex-direction: column;
+  align-items: stretch;
   width: var(--choosin__width, 15em);
+  min-width: -webkit-min-content;
+  min-width: -moz-min-content;
   min-width: min-content;
   max-width: 100%;
+  -webkit-margin-after: 1em;
   margin-block-end: 1em;
   border: 1px solid var(--choosin__border__color, #ccc);
   border-radius: 0.25em;
@@ -74,17 +77,21 @@
   border: 0;
   font-size: inherit;
   text-align: left;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   appearance: none;
   background: transparent;
   cursor: pointer;
 }
 
 .choosin__searchBox {
+  flex-grow: 1;
   position: relative;
-  width: 100%;
   margin: 0;
   padding-block: 0.25em;
+  -webkit-padding-start: 0.5em;
   padding-inline-start: 0.5em;
+  -webkit-padding-end: 3em;
   padding-inline-end: 3em;
   overflow: hidden;
   white-space: nowrap;
@@ -99,12 +106,24 @@
   outline: 0;
   box-shadow: inset 0 0 0 2px var(--choosin__border--highlight, #2b9af3);
 }
+
+.choosin__dropdownToggle {
+  position: relative;
+  width: 2em;
+  border: 0;
+  text-indent: -9999em; /* Hide text */
+  background: transparent;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  appearance: none;
+}
 /* Dropdown Arrow */
-.choosin__searchBox:before {
+.choosin__dropdownToggle:before {
   content: "";
   position: absolute;
   top: 50%;
-  right: 0.75em;
+  right: 50%;
   display: block;
   width: 0.25em;
   height: 0.25em;
@@ -117,8 +136,6 @@
   transform: translateY(0.25em) rotate(135deg);
   transform-origin: right top;
 }
-
-/* .choosin__dropdownToggle {} */
 
 /* .choosin__toggle-text {} */
 .choosin__toggle-text--is-open {
@@ -208,6 +225,8 @@
  */
 .csn-optionsList {
   position: absolute;
+  height: -webkit-min-content;
+  height: -moz-min-content;
   height: min-content;
   /* Respect max-height from JS, then the non-JS variable */
   max-height: var(
@@ -223,7 +242,8 @@
   overflow-y: auto;
   list-style: none;
 }
-/* .csn-optionsList:before {
+/*
+.csn-optionsList:before {
     content: '';
     position: absolute;
     top: 0;
@@ -232,13 +252,15 @@
     width: 100%;
     height: 0;
     border: 1px solid rgba(0, 255, 0, 0.25);
-} */
+}
+*/
 
 .csn-optionsList__option {
   display: block;
   width: 100%;
   padding-block: 0.25em;
-  padding-inline-start: 0.5em;
+  -webkit-padding-start: 0.5em;
+          padding-inline-start: 0.5em;
 }
 
 .csn-optionsList__option--highlight {

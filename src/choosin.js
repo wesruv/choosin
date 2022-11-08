@@ -119,6 +119,8 @@ class Choosin {
      */
     const _open = () => {
       this.setDropdownHeightAndDirection($choosin);
+      // Immediately search options for the current value in the search box
+      this.searchCallback();
 
       document.addEventListener('click', this.documentClick);
 
@@ -426,13 +428,13 @@ class Choosin {
     /**
      * Make sure search can't be called too often
      */
-    const debouncedSearch = debounce(
-      () => this.searchCallback($search),
+    this.debouncedSearch = debounce(
+      () => this.searchCallback(),
       250
     );
     // Trigger search if the value changes and as the user types
-    $search.addEventListener('change', () => debouncedSearch());
-    $search.addEventListener('keydown', () => debouncedSearch());
+    $search.addEventListener('change', () => this.debouncedSearch());
+    $search.addEventListener('keydown', () => this.debouncedSearch());
 
     // this.elements.search.clear = $clearSearch;
 
@@ -670,9 +672,10 @@ class Choosin {
 
     /**
      * Elements reference
+     * @property choosinWrapper {HTMLElement} Choosin's main wrapper
      * @property optionsList {HTMLElement} Choosin's ul wrapper for the the options
-     * @property trigger {HTMLElement} The main choosin button that expands/collapses the options
-     * @property searchWrapper {HTMLElement} The wrapper around the search form
+     * @property dropdownToggle {HTMLElement} The main choosin button that expands/collapses the options
+     * @property search {HTMLElement} The text field that reflects the current value/searches the list
      * @property originalSelect {HTMLElement} Select element choosin was generated from
      */
     this.elements = {
