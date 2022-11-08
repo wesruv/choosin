@@ -65,6 +65,27 @@
   border-radius: 0 0 0.25em 0.25em;
 }
 
+.choosin--hasValidValue {
+  border-color: green;
+}
+
+.choosin__status {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0.5em);
+  width: 1.5em;
+  border-radius: 50%;
+  background: #ffffff99;
+  line-height: 1.5;
+  color: red;
+  text-align: center;
+  transform: translate(0, -50%);
+}
+
+.choosin--hasValidValue .choosin__status {
+  color: green;
+}
+
 .choosin[class] [hidden] {
   display: none;
 }
