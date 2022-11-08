@@ -96,6 +96,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  cursor: text;
 }
 .choosin[open] .choosin__searchBox {
   z-index: 1;
