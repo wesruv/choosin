@@ -1,7 +1,7 @@
 const selectors = {
   'choosin': {
     'default': 'div.choosin',
-    'processed': 'choosin--processed',
+    'processed': '.choosin--processed',
     'dropUp': '.choosin--dropUp',
   },
   'trigger': '.choosin__dropdownToggle',
@@ -15,11 +15,43 @@ const selectors = {
     'text': '.choosin__searchBox',
   },
   'select': {
-    'processed': 'choosin--hide',
+    'processed': '.choosin--hide',
   },
 };
 
-const getHighlightedHash = ($choosin) => $choosin.querySelector('.csn-optionsList__option--highlight').dataset.csnHash;
+/**
+ * Get the highlighted choosin option HTML element
+ * @param {HTML Element} $choosin Choosin wrapper
+ * @returns {HTMLElement} The highlighted option
+ */
+const getHighlightedOption = ($choosin) => $choosin.querySelector(selectors.choosinOption.highlighted);
+
+/**
+ * Make sure a hash is valid
+ * @param {string} hash Value of a choosin hash (e.g. dataset.csnHash or the data-csn-hash attribute)
+ */
+const validateCsnHash = (hash) => {
+  expect(typeof hash === 'string').to.be.true;
+  expect(hash).to.have.length(8);
+};
+
+/**
+ * Gets the hash
+ * @param {HTMLElement} $choosin Choosin wrapper
+ * @returns {string} Choosin Hash
+ */
+const getHighlightedHash = ($choosin) => {
+  const $optionHighlighted = getHighlightedOption($choosin);
+  if ($optionHighlighted?.dataset?.csnHash) {
+    const csnHash = $optionHighlighted.dataset.csnHash;
+    validateCsnHash(csnHash);
+    return csnHash;
+  }
+  else {
+    console.error('Couldn\'t get highlighted option.');
+  }
+};
+
 
 describe('Choosin Tests', () => {
   beforeEach(() => {
@@ -52,8 +84,8 @@ describe('Choosin Tests', () => {
           expect($choosinOptionsList).to.not.be.empty;
 
           // Make sure the processed classes have been added
-          expect($choosin.classList.contains(selectors.choosin.processed)).to.be.true;
-          expect($select.classList.contains(selectors.select.processed)).to.be.true;
+          expect($choosin.classList.contains(selectors.choosin.processed.substring(1))).to.be.true;
+          expect($select.classList.contains(selectors.select.processed.substring(1))).to.be.true;
 
           // Make sure basic info of choosin and select match
           expect($select).to.not.be.empty;
@@ -143,8 +175,7 @@ describe('Choosin Tests', () => {
                   .click(clickOptions)
                   .then(() => {
                     cy.get('@choosin').should('have.attr', 'open');
-                    // @todo Fix Drop Up behavior
-                    // expect($choosin.classList.contains(selectors.choosin.dropUp.substring(1))).to.be.true;
+                    expect($choosin.classList.contains(selectors.choosin.dropUp.substring(1))).to.be.true;
                   });
               });
           });
@@ -152,8 +183,12 @@ describe('Choosin Tests', () => {
     });
 
     it('Should show the correct behaviors when a new options is selected', ()=> {
+      cy.get(selectors.search.text)
+        .as('searchText')
+        .clear()
+        .wait(200)
       cy.get('@trigger')
-        .click()
+        // .click()
         .then(($triggers) => {
           const $trigger = $triggers[0];
           cy.get('@choosin').then(($choosins) => {
@@ -179,48 +214,105 @@ describe('Choosin Tests', () => {
         });
     });
 
-    it('Should highlight a different option when arrow keys are pressed', ()=> {
-      cy.get('@choosin')
-        .then(($choosins) => {
-          const $choosin = $choosins[0];
-          cy.get('@trigger')
-            .click()
-            .then(() => {
-              const firstHash = getHighlightedHash($choosin);
-              cy.focused()
-              .type('{upArrow}')
-              .then(() => {
-                const secondHash = getHighlightedHash($choosin);
-
-              });
-            });
-        });
-    });
-
   });
 
   context('Search tests', () => {
-    it('Should show 5 options when "unit" is in search field, then clear button should reset', () => {
+    it('Should show 5 options when "sw" is in search field, then clear button should reset', () => {
       cy.get('@trigger').click();
       cy.get('@choosin').then(($choosins) => {
         const $choosin = $choosins[0];
         cy.get(selectors.search.text, {'withinSubject': $choosin})
           .as('searchText')
           .clear()
+          .wait(200)
           // Search for 'united'
-          .type('united')
+          .type('sw')
           // Give the component time to search due to debounce
           .wait(500)
           .then(() => {
             const $visibleOptions = $choosin.querySelectorAll('.csn-optionsList__option:not([hidden])');
-            // Should see 5 results
-            expect($visibleOptions.length).to.equal(5);
+            // Should see 4 results with the current content
+            expect($visibleOptions.length).to.equal(4);
             // First option should have a highlight
-            expect($visibleOptions[0].classList.contains('csn-optionsList__option--highlight')).to.be.true;
+            expect($visibleOptions[0].classList.contains(selectors.choosinOption.highlighted.substring(1))).to.be.true;
           })
-          // @todo clear button test
       });
     });
   });
 
+
+  context('Keyboard Navigation Tests', () => {
+    it('Should highlight a different option when arrow keys are pressed', ()=> {
+      cy.get(selectors.search.text)
+        .as('searchText')
+        .clear()
+        .wait(200)
+      cy.get('@choosin')
+        .then(($choosins) => {
+          const $choosin = $choosins[0];
+          const firstHash = getHighlightedHash($choosin);
+          cy.get('@searchText')
+            .type('{downArrow}')
+            .then(() => {
+              // Going down one should show we have a different highlighted option
+              const secondHash = getHighlightedHash($choosin);
+              expect(firstHash).to.not.equal(secondHash);
+            })
+            .then(() => {
+              cy.get('@searchText')
+                .type('{upArrow}')
+                .then(() => {
+                  // Going back up should show we have the same hash
+                  const thirdHash = getHighlightedHash($choosin);
+                  expect(thirdHash).to.equal(firstHash);
+                });
+            });
+        });
+    });
+    it('Navigating to new option with keyboard and pressing enter should select highlighted option', ()=> {
+      cy.get(selectors.search.text)
+        .as('searchText')
+        .clear()
+        .wait(200)
+        .then(() => {
+        cy.get('@choosin')
+          .then(($choosins) => {
+            const $choosin = $choosins[0];
+            const firstHash = getHighlightedHash($choosin);
+
+            cy.get('@searchText')
+              .type('{downArrow}')
+              .then(() => {
+                cy.get('@searchText')
+                  .type('{downArrow}')
+                  .then(() => {
+                    cy.get('@searchText')
+                      .type('{downArrow}')
+                      .then(() => {
+                        cy.get('@searchText')
+                          .type('{downArrow}')
+                          .then(() => {
+                            const $highlightedOption = getHighlightedOption($choosin);
+                            const secondHash = $highlightedOption.dataset.csnHash;
+                            validateCsnHash(secondHash);
+                            expect(firstHash).to.not.equal(secondHash);
+                            cy.get('@searchText')
+                              .type('{enter}')
+                              .then(() => {
+                                const $selectedOption = $highlightedOption;
+                                cy.get(selectors.select.processed)
+                                  .then(($selects) => {
+                                    const $select = $selects[0];
+                                    expect($selectedOption.dataset.value).to.equal($choosin.dataset.value);
+                                    expect($select.value).to.equal($choosin.dataset.value);
+                                  })
+                              });
+                          });
+                      });
+                  });
+              })
+          });
+        });
+    });
+  });
 });

@@ -387,7 +387,6 @@ class Choosin {
    */
   hasValidValueCallback(isValid, previousState) {
     // If nothing has changed, don't do anything
-    console.log('hasValidValueCallback', {isValid, previousState});
     if (isValid === previousState) return;
 
     if (isValid) {
@@ -422,6 +421,8 @@ class Choosin {
       return;
     }
 
+    this.state.set('previousSearch', searchQuery);
+
     // Show everything if search is blank
     if (!searchQuery) {
       this.log('log', 'Search empty, showing all options.');
@@ -430,7 +431,6 @@ class Choosin {
       return;
     }
     this.log('log', 'Starting search', {previousSearch, searchQuery});
-    this.state.set('previousSearch', searchQuery);
     // If we have a string show matches and hide misses
     const visibleOptionHashes = [];
     let isFirstMatch = true;
@@ -745,10 +745,14 @@ class Choosin {
 
     $choosin.classList.add('choosin');
     $choosin.dataset.value = $optionSelected.value;
+    $choosin.dataset.selectId = $select.id;
 
     $optionsList.id = `csn-optionsList--${$choosin.dataset.csnHash}`;
     $optionsList.classList.add('choosin__optionsList', 'csn-optionsList');
+
+    // Append everything to the choosin
     $choosin.append($search, $dropdownToggle, $status, $optionsList);
+
     $selectLabel.setAttribute('for', $optionsList.id);
 
     $selectLabel.addEventListener('click', (event) => {
