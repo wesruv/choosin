@@ -37,7 +37,7 @@ class Choosin {
       'setupDropdownToggle',
       'showAllOptions',
       'checkForValidValue',
-      'validValueCallback',
+      'hasValidValueCallback',
       'searchCallback',
       'setupSearch',
       'navigateOptions',
@@ -131,18 +131,14 @@ class Choosin {
       // Accessibility feature
       this.elements.search.setAttribute('aria-expanded', 'true');
       this.elements.dropdownToggle.setAttribute('aria-expanded', 'true');
-      // this.elements.search.clear.setAttribute('tabindex', '0');
-      // this.elements.optionsList.setAttribute('tabindex', '0');
-      // this.elements.optionsList.setAttribute('aria-hidden', 'false');
+      // Has to be focusable so keyboard users can scroll
       this.elements.optionsList.setAttribute('tabindex', '0');
       this.elements.optionsList.setAttribute('aria-hidden', 'false');
-
-      //this.elements.option.setAttribute('aria-hidden', 'false');
 
       const $optionSelected = this.state.get('optionSelected');
       // Highlight an option on open
       if ($optionSelected) {
-        // Choose the selected option, if there is one
+        // Show the selected option, if there is one
         this.state.set('optionHighlighted', $optionSelected);
         this.makeSureOptionIsVisible($optionSelected, false);
         $optionSelected.setAttribute('aria-selected', 'true'); // Accessibility feature
@@ -150,7 +146,7 @@ class Choosin {
       else {
         this.log('error', 'There isn\'t a selected option, which shouldn\'t happen.');
         $optionSelected.removeAttribute('aria-selected'); // Accessibility feature
-        // // Otherwise get the first visible option
+        // Otherwise get the first visible option
         // const visibleOptionHashes = this.state.get('visibleOptionHashes');
         // const optionsMap = this.state.get('optionsMap');
         // const $firstVisibleOption = optionsMap[visibleOptionHashes[0]].choosinOption;
@@ -178,16 +174,13 @@ class Choosin {
       this.state.set('dropdownDirection', 'none');
       // Reset scroll position of choosin
       this.elements.optionsList.scrollTo({'top': 0});
-      // Focus the trigger per a11y best practices, assuming something else hasn't been focused
+      // Focus the an open/close toggle per a11y best practices, assuming something else hasn't been focused
       if (document.activeElement.closest('.choosin')) {
         this.elements.dropdownToggle.focus();
       }
       // Accessibility features
       this.elements.search.setAttribute('aria-expanded', 'false');
       this.elements.dropdownToggle.setAttribute('aria-expanded', 'false');
-      // this.elements.search.clear.setAttribute('tabindex', '-1');
-      // this.elements.optionsList.setAttribute('tabindex', '-1');
-      // this.elements.optionsList.setAttribute('aria-hidden', 'true');
       this.elements.optionsList.setAttribute('tabindex', '-1');
       this.elements.optionsList.setAttribute('aria-hidden', 'true');
     };
@@ -215,7 +208,7 @@ class Choosin {
     // Validate
     if (!value) {
       this.log('warn', 'Option was selected, but it is missing or empty value', $optionSelected);
-      this.state.set('validValue', false);
+      this.state.set('hasValidValue', false);
       return;
     }
     if (value && $optionSelected !== $optionWasSelected) {
@@ -335,11 +328,11 @@ class Choosin {
     const $optionSelected = this.state.get('optionSelected');
     const $select = this.elements.originalSelect;
 
-    let validValue;
+    let hasValidValue;
 
     if (!$optionSelected) {
       this.log('warn', 'No option selected');
-      validValue = false;
+      hasValidValue = false;
     }
     if (!$choosin.dataset.value) {
       this.log('warn',
@@ -350,7 +343,7 @@ class Choosin {
       if ($select.value) {
         $select.selectedInex = -1;
       }
-      validValue = false;
+      hasValidValue = false;
     }
     if ($choosin.dataset.value !== $optionSelected.dataset.value) {
       this.log('error',
@@ -358,7 +351,7 @@ class Choosin {
         `$choosin.dataset.value = ${$choosin.dataset.value}`,
         `$optionSelected.dataset.value = ${$optionSelected.dataset.value}`
       );
-      validValue = false;
+      hasValidValue = false;
     }
     if (this.elements.search.value.trim() !== $optionSelected.innerText.trim()) {
       this.log('warn',
@@ -366,7 +359,7 @@ class Choosin {
         `this.elements.search.value.trim() = ${this.elements.search.value.trim()}`,
         `$optionSelected.innerText.trim() = ${$optionSelected.innerText.trim()}`
       );
-      validValue = false;
+      hasValidValue = false;
     }
     if ($select.value !== $choosin.dataset.value) {
       this.log('error',
@@ -374,17 +367,17 @@ class Choosin {
         `$choosin.dataset.value = ${$choosin.dataset.value}`,
         `$select.value = ${$select.value}`
       );
-      validValue = false;
+      hasValidValue = false;
     }
-    else if (typeof validValue === 'undefined') {
-      validValue = true;
+    else if (typeof hasValidValue === 'undefined') {
+      hasValidValue = true;
     }
 
-    // Force validValue to a boolean
-    validValue = !!validValue;
+    // Force hasValidValue to a boolean
+    hasValidValue = !!hasValidValue;
 
-    this.state.set('validValue', validValue);
-    return validValue;
+    this.state.set('hasValidValue', hasValidValue);
+    return hasValidValue;
   }
 
   /**
@@ -392,8 +385,9 @@ class Choosin {
    * @param {boolean} isValid Value of choosin passed validation and matches state and select
    * @param {boolean} previousState The previous value
    */
-  validValueCallback(isValid, previousState) {
+  hasValidValueCallback(isValid, previousState) {
     // If nothing has changed, don't do anything
+    console.log('hasValidValueCallback', {isValid, previousState});
     if (isValid === previousState) return;
 
     if (isValid) {
@@ -432,7 +426,7 @@ class Choosin {
     if (!searchQuery) {
       this.log('log', 'Search empty, showing all options.');
       this.showAllOptions();
-      this.state.set('isValid', false);
+      this.state.set('hasValidValue', false);
       return;
     }
     this.log('log', 'Starting search', {previousSearch, searchQuery});
@@ -597,9 +591,9 @@ class Choosin {
         // this.document.activeElement.focus()
         break;
       case 'Enter':
-        event.preventDefault();
         const $optionHighlighted = this.state.get('optionHighlighted');
-        if ($optionHighlighted) {
+        if (this.state.get('isOpen') && $optionHighlighted) {
+          event.preventDefault();
           this.elements.search.value = $optionHighlighted.innerText.trim();
           this.state.set('optionSelected', $optionHighlighted);
         }
@@ -799,6 +793,7 @@ class Choosin {
      * @property dropdownDirection {String} 'up', 'down', or 'none'
      * @property hasSearch {boolean} If search has been initialized
      * @property previousSearch {String} Search field value on last search
+     * @property isRequired {boolean} Whether or not this form element is required
      */
     const defaultState = {
       'optionsMap': {},
@@ -810,7 +805,9 @@ class Choosin {
       'dropdownDirection': 'none',
       'hasSearch': false,
       'previousSearch': '',
-      'validValue': false,
+      'hasValidValue': false,
+      // @todo Handle required behavior
+      'isRequired': $select.hasAttribute('required'),
     };
     this.state = new simpleState(defaultState, 'verbose');
 
@@ -841,7 +838,7 @@ class Choosin {
     this.state.subscribe('optionHighlighted', this.optionHighlightedCallback);
 
     // Connect value checking to state
-    this.state.subscribe('validValue', this.validValueCallback);
+    this.state.subscribe('hasValidValue', this.hasValidValueCallback);
 
     $choosin.addEventListener('keydown', (event) => this.keyboardHandler(event, $choosin));
 
