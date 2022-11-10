@@ -491,6 +491,7 @@ class Choosin {
     $search.setAttribute('aria-autocomplete', 'list');
     $search.setAttribute('aria-controls', this.elements.optionsList.id);
     $search.setAttribute('aria-expanded', 'false');
+    $search.setAttribute('aria-label', this.elements.selectLabel.textContent.trim());
 
     // Create clear button
     // const $clearSearch = document.createElement('button');
@@ -722,9 +723,6 @@ class Choosin {
     $status.classList.add('choosin__status');
 
     // Accessibility features
-    // @todo: KS, fix screen reader issues for ul
-    $optionsList.setAttribute('tabindex', '0');
-    // $optionsList.setAttribute('aria-hidden', 'true');
     $optionsList.setAttribute('tabindex', '-1');
     $optionsList.setAttribute('aria-hidden', 'true');
     $optionsList.setAttribute('role', 'listbox');
