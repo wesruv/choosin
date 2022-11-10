@@ -576,6 +576,9 @@ class Choosin {
   keyboardHandler(event) {
     const $choosin = this.elements.choosinWrapper;
 
+    // @todo: KS - need to add the proper arrow key functionality
+    // https://codepen.io/kelsS/pen/wvXvEKW/8dd3aed6aebf70992f27f916715c5bf3
+    // https://www.w3.org/WAI/ARIA/apg/example-index/combobox/combobox-autocomplete-list.html
     switch (event.key) {
       case 'Escape':
         this.state.set('isOpen', false);
