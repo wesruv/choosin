@@ -730,6 +730,7 @@ class Choosin {
     $optionsList.setAttribute('tabindex', '-1');
     $optionsList.setAttribute('aria-hidden', 'true');
     $optionsList.setAttribute('role', 'listbox');
+    $search.setAttribute('type', 'text');
 
     $dropdownToggle.classList.add('choosin__dropdownToggle');
     // @todo Translate
