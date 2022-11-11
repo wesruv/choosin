@@ -583,6 +583,10 @@ class Choosin {
     switch (event.key) {
       case 'Escape':
         this.state.set('isOpen', false);
+        if (this.state.get('isOpen') === false) {
+          // clear the combobox
+          this.elements.search.value = '';
+        }
         break;
       case 'ArrowUp':
         event.preventDefault();
