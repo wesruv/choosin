@@ -615,6 +615,7 @@ class Choosin {
           this.elements.search.focus();
         }
     }
+    // @todo: KS add left and right arrow key functionality
   }
 
   /**
