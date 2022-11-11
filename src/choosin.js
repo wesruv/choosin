@@ -583,6 +583,8 @@ class Choosin {
     switch (event.key) {
       case 'Escape':
         this.state.set('isOpen', false);
+        // move focus back to combobox
+        this.elements.search.focus();
         if (this.state.get('isOpen') === false) {
           // clear the combobox
           this.elements.search.value = '';
@@ -590,11 +592,13 @@ class Choosin {
         break;
       case 'ArrowUp':
         event.preventDefault();
+        this.state.set('isOpen', true);
         this.navigateOptions(-1, $choosin);
         // this.document.activeElement.focus()
         break;
       case 'ArrowDown':
         event.preventDefault();
+        this.state.set('isOpen', true);
         this.navigateOptions(1, $choosin);
 
         // this.document.activeElement.focus()
