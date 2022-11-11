@@ -341,7 +341,7 @@ class Choosin {
       );
       // Make sure $select element also has no value
       if ($select.value) {
-        $select.selectedInex = -1;
+        $select.selectedIndex = -1;
       }
       hasValidValue = false;
     }
@@ -594,14 +594,16 @@ class Choosin {
         event.preventDefault();
         this.state.set('isOpen', true);
         this.navigateOptions(-1, $choosin);
-        // this.document.activeElement.focus()
+        // @todo: ensure that the selected element is visible when arrowing through the list
+        // this.makeSureOptionIsVisible(this.elements.$option, false)
         break;
       case 'ArrowDown':
         event.preventDefault();
         this.state.set('isOpen', true);
         this.navigateOptions(1, $choosin);
+        // @todo: ensure that the selected element is visible when arrowing through the list
+        // this.makeSureOptionIsVisible(this.elements.$option, false)
 
-        // this.document.activeElement.focus()
         break;
       case 'Enter':
         const $optionHighlighted = this.state.get('optionHighlighted');
@@ -609,6 +611,8 @@ class Choosin {
           event.preventDefault();
           this.elements.search.value = $optionHighlighted.innerText.trim();
           this.state.set('optionSelected', $optionHighlighted);
+          // set focus back to the combobox
+          this.elements.search.focus();
         }
     }
   }
