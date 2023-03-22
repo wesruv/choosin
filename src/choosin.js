@@ -1,6 +1,8 @@
 "use strict";
 
 // @todo Disabled state
+// @todo Required/not required state
+// @todo Handle if a valid option is set, but then unset. Check select's behavior
 // @todo handle options group, or other possible select children
 // @todo Translations
 // @todo Accessibility
@@ -38,6 +40,7 @@ class Choosin {
       'showAllOptions',
       'checkForValidValue',
       'hasValidValueCallback',
+      'visibleOptionHashesCallback',
       'searchCallback',
       'setupSearch',
       'navigateOptions',
@@ -109,11 +112,13 @@ class Choosin {
    * @param {boolean} previousState Old value of isOpen
    */
   isOpenCallback(setToOpen, previousState) {
-    const $choosin = this.elements.choosinWrapper;
     // If nothing has changed, no need to do anything
     if (setToOpen === previousState) {
       return;
     }
+
+    const $choosin = this.elements.choosinWrapper;
+    const $body = document.querySelector('body');
 
     /**
      * Open this choosin
@@ -124,10 +129,12 @@ class Choosin {
       // Immediately search options for the current value in the search box
       this.searchCallback();
 
-      document.addEventListener('click', this.documentClick);
+      $body.addEventListener('click', this.documentClick);
 
       // Open the dropdown
       $choosin.setAttribute('open', '');
+      $choosin.classList.add('choosin--isOpen');
+
       // Accessibility feature
       this.elements.search.setAttribute('aria-expanded', 'true');
       this.elements.dropdownToggle.setAttribute('aria-expanded', 'true');
@@ -146,20 +153,7 @@ class Choosin {
       else {
         this.log('error', 'There isn\'t a selected option, which shouldn\'t happen.');
         $optionSelected.removeAttribute('aria-selected'); // Accessibility feature
-        // Otherwise get the first visible option
-        // const visibleOptionHashes = this.state.get('visibleOptionHashes');
-        // const optionsMap = this.state.get('optionsMap');
-        // const $firstVisibleOption = optionsMap[visibleOptionHashes[0]].choosinOption;
-        // this.state.set('optionHighlighted', $firstVisibleOption);
       }
-
-      // Focus on text field if we have search
-      // if (this.state.get('hasSearch')) {
-      //   const $searchText = $choosin.querySelector('.csn-search__textField');
-      //   if ($searchText) {
-      //     $searchText.focus();
-      //   }
-      // }
     }
 
     /**
@@ -168,7 +162,12 @@ class Choosin {
      */
     const _close = () => {
       $choosin.removeAttribute('open');
-      document.removeEventListener('click', this.documentClick);
+      if ($choosin.classList.contains('choosin--isOpen')) {
+        $choosin.classList.remove('choosin--isOpen');
+      }
+
+      $body.removeEventListener('click', this.documentClick);
+
       // Remove state that doesn't apply when closed
       this.state.set('optionHighlighted', null);
       this.state.set('dropdownDirection', 'none');
@@ -304,17 +303,17 @@ class Choosin {
    * Show all options that may have been hidden by search
    */
   showAllOptions() {
-    const optionHashesInOrder = this.state.get('optionHashesInOrder');
+    const optionsHashesInOrder = this.state.get('optionsHashesInOrder');
     const optionsMap = this.state.get('optionsMap');
     const $optionSelected = this.state.get('optionSelected');
-    for (let i = 0; i < optionHashesInOrder.length; i++) {
-      const hash = optionHashesInOrder[i];
+    for (let i = 0; i < optionsHashesInOrder.length; i++) {
+      const hash = optionsHashesInOrder[i];
       const optionData = optionsMap[hash];
       const $option = optionData.choosinOption;
       if ($option.hidden) $option.hidden = false;
     }
     // Set all options as visible in state
-    this.state.set('visibleOptionHashes', this.state.get('optionHashesInOrder'));
+    this.state.set('visibleOptionHashes', this.state.get('optionsHashesInOrder'));
     this.state.set('optionHighlighted', $optionSelected);
     this.makeSureOptionIsVisible($optionSelected, false);
   }
@@ -390,14 +389,39 @@ class Choosin {
     if (isValid === previousState) return;
 
     if (isValid) {
+      if (this.elements.choosinWrapper.classList.contains('choosin--hasInvalidValue')) {
+        this.elements.choosinWrapper.classList.remove('choosin--hasInvalidValue');
+      }
       this.elements.choosinWrapper.classList.add('choosin--hasValidValue');
       // @todo Set accessible feedback
-      this.elements.status.innerText = '✓';
+      // this.elements.status.innerText = '✓';
     }
     else {
-      this.elements.choosinWrapper.classList.remove('choosin--hasValidValue');
+      if (this.elements.choosinWrapper.classList.contains('choosin--hasValidValue')) {
+        this.elements.choosinWrapper.classList.remove('choosin--hasValidValue');
+      }
+      this.elements.choosinWrapper.classList.add('choosin--hasInvalidValue');
       // @todo Set accessible feedback
-      this.elements.status.innerText = 'x';
+      // this.elements.status.innerText = 'x';
+    }
+  }
+
+
+  /**
+   * Callback from state changes to visibleOptionHashes
+   * @param {array} visibleOptionHashes New value passed from state subscriber
+   */
+  visibleOptionHashesCallback(visibleOptionHashes) {
+    const optionsHashesInOrder = this.state.get('optionsHashesInOrder');
+    const $seeAllOptions = this.elements.seeAllOptions;
+    // Hide the seeAllOptions button if all options are visible
+    if (visibleOptionHashes.length === optionsHashesInOrder.length) {
+      console.log('visibleOptionHashesCallback HIDE');
+      if (!$seeAllOptions.hidden) $seeAllOptions.hidden = true;
+    }
+    else {
+      console.log('visibleOptionHashesCallback SHOW');
+      if ($seeAllOptions.hidden) $seeAllOptions.hidden = false;
     }
   }
 
@@ -406,7 +430,7 @@ class Choosin {
    */
   searchCallback() {
     const $search = this.elements.search;
-    const optionHashesInOrder = this.state.get('optionHashesInOrder');
+    const optionsHashesInOrder = this.state.get('optionsHashesInOrder');
     const optionsMap = this.state.get('optionsMap');
     const previousSearch = this.state.get('previousSearch');
     let searchQuery = $search.value;
@@ -434,12 +458,15 @@ class Choosin {
     // If we have a string show matches and hide misses
     const visibleOptionHashes = [];
     let isFirstMatch = true;
-    for (let i = 0; i < optionHashesInOrder.length; i++) {
-      const hash = optionHashesInOrder[i];
+    for (let i = 0; i < optionsHashesInOrder.length; i++) {
+      const hash = optionsHashesInOrder[i];
       const optionData = optionsMap[hash];
       const searchString = optionData.searchString;
       const $option = optionData.choosinOption;
-      const isMatch = searchString.indexOf(searchQuery) >= 0;
+      // If there's a searchString, check if it's a match,
+      // custom options like See All won't have a searchString should always be shown
+      const isMatch = !!searchString ? searchString.indexOf(searchQuery) >= 0 : true;
+
       if (isMatch) {
         // Make sure it's visible
         if ($option.hidden) $option.hidden = false;
@@ -456,7 +483,27 @@ class Choosin {
         if (!$option.hidden) $option.hidden = true;
       }
     }
-    this.state.set('visibleOptionHashes', visibleOptionHashes);
+
+    // If the seeAllOptions button is visible
+    const hasSeeAllOptions = visibleOptionHashes.includes('see-all');
+    const hasSelectedOption = !!this.state.get('optionSelected');
+
+    // Show all options if we're showing nothing, or close to nothing
+    if (
+      // There are no results
+      !visibleOptionHashes.length
+      // The only results are the show all button
+      || hasSeeAllOptions && !hasSelectedOption && visibleOptionHashes.length === 1
+      // The only results are the currently selected option, and the show all button
+      || hasSeeAllOptions && hasSelectedOption && visibleOptionHashes.length === 2
+     ) {
+      this.showAllOptions();
+    }
+    else {
+      // Otherwise, just show the search results
+      this.state.set('visibleOptionHashes', visibleOptionHashes);
+    }
+
     this.checkForValidValue();
   };
 
@@ -508,7 +555,7 @@ class Choosin {
     // });
 
     // Default visible options to all options
-    this.state.set('visibleOptionHashes', this.state.get('optionHashesInOrder'));
+    this.state.set('visibleOptionHashes', this.state.get('optionsHashesInOrder'));
 
     /**
      * Make sure search can't be called too often
@@ -619,6 +666,49 @@ class Choosin {
   }
 
   /**
+   * Utility function to create proper choosin option markup
+   * @param {string} value What value property should be set to
+   * @param {string} text  The visible text of the option
+   * @param {string} hash  Choosin Hash used to tie select option to choosin option
+   * @returns {HTMLElement}
+   */
+  createChoosinOption(value, text, hash, isSelected = false, defaultBehaviors = true) {
+    // Build & populate the choosin option element
+    const $choosinOption = document.createElement('li');
+    // Accessibility feature - role: option
+    $choosinOption.setAttribute('role', 'option');
+    if (hash) $choosinOption.dataset.csnHash = hash;
+    $choosinOption.classList.add('csn-optionsList__option');
+    if (value) $choosinOption.dataset.value = value;
+    $choosinOption.innerText = text;
+
+    if (defaultBehaviors) {
+      // If it's a selected element, update state so it knows that
+      if (isSelected) {
+        this.state.set('optionSelected', $choosinOption);
+      }
+
+      // Add event listeners
+      // Change the form value when an option is clicked
+      $choosinOption.addEventListener('click', (event) => {
+        event.preventDefault();
+        this.state.set('optionSelected', $choosinOption);
+      });
+
+      // Update highlighted option on hover
+      $choosinOption.addEventListener('mouseover', () => {
+        this.state.set('optionHighlighted', $choosinOption);
+      });
+
+      $choosinOption.addEventListener('focus', () => {
+        this.state.set('optionHighlighted', $choosinOption);
+      });
+    }
+
+    return $choosinOption;
+  }
+
+  /**
    * Creates a choosin option based on a select option
    * @param {HTMLElement} $option option tag to create a choosin option from
    * @returns {HTMLElement} Choosin option
@@ -626,39 +716,13 @@ class Choosin {
   processOption($option) {
     const hash = generateRandomHash();
     const value = $option.value;
+    const text = $option.innerText.trim();
+    const isSelected = $option.hasAttribute('selected');
 
     // Add a hash to the select option to tie it to the choosin option
     $option.dataset.csnHash = hash;
 
-    // Build & populate the choosin option element
-    const $choosinOption = document.createElement('li');
-    // Accessibility feature - role: option
-    $choosinOption.setAttribute('role', 'option');
-    $choosinOption.dataset.csnHash = hash;
-    $choosinOption.classList.add('csn-optionsList__option');
-    $choosinOption.dataset.value = value;
-    $choosinOption.innerText = $option.innerText.trim();
-
-    // If it's a selected element, update state so it knows that
-    if ($option.hasAttribute('selected')) {
-      this.state.set('optionSelected', $choosinOption);
-    }
-
-    // Add event listeners
-    // Change the form value when an option is clicked
-    $choosinOption.addEventListener('click', (event) => {
-      event.preventDefault();
-      this.state.set('optionSelected', $choosinOption);
-    });
-
-    // Update highlighted option on hover
-    $choosinOption.addEventListener('mouseover', () => {
-      this.state.set('optionHighlighted', $choosinOption);
-    });
-
-    $choosinOption.addEventListener('focus', () => {
-      this.state.set('optionHighlighted', $choosinOption);
-    });
+    const $choosinOption = this.createChoosinOption(value, text, hash, isSelected);
 
     return $choosinOption;
   }
@@ -672,7 +736,44 @@ class Choosin {
 
     const optionsMap = {};
     // An array of hashes in DOM order, for when that's needed.
-    const optionHashesInOrder = [];
+    const optionsHashesInOrder = [];
+
+    // Create a fake option to show all options, overriding search results
+    const seeAllHash = 'see-all';
+    const $seeAllOptions = this.createChoosinOption(
+      false, // Has no value
+      'See all options', // @todo translate
+      seeAllHash,
+      false, // Isn't selected (and can't be)
+      false  // Don't add default behaviors
+    );
+    $seeAllOptions.classList.add('csn-optionsList__option--seeAll');
+
+    // Show all options on click
+    $seeAllOptions.addEventListener('click', () => {
+      this.showAllOptions();
+    });
+    // Update highlighted option on hover
+    $seeAllOptions.addEventListener('mouseover', () => {
+      this.state.set('optionHighlighted', $seeAllOptions);
+    });
+
+    $seeAllOptions.addEventListener('focus', () => {
+      this.state.set('optionHighlighted', $seeAllOptions);
+    });
+
+    // Add necessary metadata
+    optionsHashesInOrder.push(seeAllHash);
+    optionsMap[seeAllHash] = {
+      'value': false,
+      'searchString': false,
+      'choosinOption': $seeAllOptions,
+      'selectOption': null,
+    }
+
+    $optionsList.append($seeAllOptions);
+    this.elements.seeAllOptions = $seeAllOptions;
+
 
     // Iterate over select's children to build out choosin
     for (let index = 0; index < $select.children.length; index++) {
@@ -688,7 +789,7 @@ class Choosin {
 
         const $choosinOption = this.processOption($element);
         const hash = $choosinOption.dataset.csnHash;
-        optionHashesInOrder.push(hash);
+        optionsHashesInOrder.push(hash);
 
         // Add data to our data arrays and objects
         optionsMap[hash] = {
@@ -705,7 +806,7 @@ class Choosin {
 
     // Update state
     this.state.set('optionsMap', optionsMap);
-    this.state.set('optionHashesInOrder', optionHashesInOrder);
+    this.state.set('optionsHashesInOrder', optionsHashesInOrder);
   }
 
   /**
@@ -794,6 +895,7 @@ class Choosin {
       'status': $status,
       'originalSelect': $select,
       'selectLabel': $selectLabel,
+      'seeAllOptions': null, // Created later
     };
 
     /**
@@ -860,6 +962,8 @@ class Choosin {
     // Connect value checking to state
     this.state.subscribe('hasValidValue', this.hasValidValueCallback);
 
+    this.state.subscribe('visibleOptionHashes', this.visibleOptionHashesCallback);
+
     $choosin.addEventListener('keydown', (event) => this.keyboardHandler(event, $choosin));
 
     /**
@@ -893,12 +997,20 @@ class Choosin {
    */
   documentClick(event) {
     let $choosinInPath;
-    const clickPath = event.path;
+    const clickPath = event.path || event.composedPath();
     const $choosinsOnPage = document.querySelectorAll('.choosin--processed');
     // Quick exit if there aren't any choosins
-    if ($choosinsOnPage.length === 0) return;
+    if ($choosinsOnPage.length === 0) {
+      this.log('warn', 'No choosins on this page');
+      return;
+    }
 
     // Review the click path and find $choosin element if there is one
+    if (!clickPath) {
+      this.log('warn', 'No clickPath');
+      return;
+    }
+
     for (let index = 0; index < clickPath.length; index++) {
       const $element = clickPath[index];
       if ($element && $element.classList && $element.classList.contains('choosin')) {
