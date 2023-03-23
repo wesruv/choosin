@@ -83,41 +83,41 @@
 
 .choosin__status {
   position: absolute;
-  top: -1px;
-  left: calc(100% - 0.5em);
-  z-index: -1;
-  width: 2em;
-  height: calc(100% + 2px);
-  padding-block: 0.25em;
-  -webkit-padding-start: 0.5em;
-          padding-inline-start: 0.5em;
-  border-radius: 0 0.25em 0.25em 0;
-  background: var(--choosin__color--invalid, red);
-  line-height: 1.5;
-  color: #fff;
+  top: 50%;
+  left: calc(100% + 0.75em);
+  width: 1.5em;
+  height: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  visibility: hidden;
+  border-radius: 50%;
+  line-height: 1;
   text-align: center;
+  color: #555;
+  background: #00000011;
+  transform: translate(0, -50%);
+  box-shadow:
+    inset 1px 1px 1px 0 #00000011,
+    inset -1px -1px 0 0 #ffffff99;
 }
 
 .choosin--hasValidValue .choosin__status:before {
   content: var(--choosin__status__content--valid);
 }
-
 .choosin--hasInvalidValue .choosin__status:before {
   content: var(--choosin__status__content--invalid);
 }
 
+.choosin--hasInvalidValue .choosin__status,
 .choosin--hasValidValue .choosin__status {
-  background: var(--choosin__color--valid, #090);
+  visibility: visible;
+}
+.choosin--hasValidValue .choosin__status {
+  color: var(--choosin__color--valid, #090);
 }
 .choosin--hasInvalidValue .choosin__status {
-  background: var(--choosin__color--invalid, #b00);
-}
-
-.choosin--hasValidValue .choosin__status:before {
-  background: var(--choosin__color--valid, #090);
-}
-.choosin--hasInvalidValue .choosin__status {
-  background: var(--choosin__color--invalid, #b00);
+  color: var(--choosin__color--invalid, #b00);
 }
 
 .choosin[class] [hidden] {

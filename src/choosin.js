@@ -151,8 +151,9 @@ class Choosin {
         $optionSelected.setAttribute('aria-selected', 'true'); // Accessibility feature
       }
       else {
-        this.log('error', 'There isn\'t a selected option, which shouldn\'t happen.');
-        $optionSelected.removeAttribute('aria-selected'); // Accessibility feature
+        if ($optionSelected) {
+          $optionSelected.removeAttribute('aria-selected'); // Accessibility feature
+        }
       }
     }
 
@@ -167,6 +168,8 @@ class Choosin {
       }
 
       $body.removeEventListener('click', this.documentClick);
+
+      this.checkForValidValue();
 
       // Remove state that doesn't apply when closed
       this.state.set('optionHighlighted', null);
@@ -326,7 +329,6 @@ class Choosin {
     const $choosin = this.elements.choosinWrapper;
     const $optionSelected = this.state.get('optionSelected');
     const $select = this.elements.originalSelect;
-
     let hasValidValue;
 
     if (!$optionSelected) {
@@ -532,7 +534,9 @@ class Choosin {
     });
 
     $search.classList.add('choosin__searchBox');
-    $search.value = $optionSelected.innerText.trim();
+    if ($optionSelected) {
+      $search.value = $optionSelected.innerText.trim();
+    }
     // Accessibility features
     $search.setAttribute('role', 'combobox');
     $search.setAttribute('aria-autocomplete', 'list');
@@ -838,6 +842,10 @@ class Choosin {
     const $optionsList = document.createElement('ul');
     const $status = document.createElement('div');
 
+    if ($select.hasAttribute('required')) {
+      $choosin.setAttribute('aria-required', '');
+    }
+
     $status.classList.add('choosin__status');
 
     // Accessibility features
@@ -861,7 +869,9 @@ class Choosin {
     }
 
     $choosin.classList.add('choosin');
-    $choosin.dataset.value = $optionSelected.value;
+    if ($optionSelected) {
+      $choosin.dataset.value = $optionSelected.value;
+    }
     $choosin.dataset.selectId = $select.id;
 
     $optionsList.id = `csn-optionsList--${$choosin.dataset.csnHash}`;
@@ -1026,9 +1036,9 @@ class Choosin {
     // Iterate over all $choosins and close any that aren't in the path
     for (let index = 0; index < $choosinsOnPage.length; index++) {
       const $choosin = $choosinsOnPage[index];
-      const isOpen = this.state.get('isOpen');
+      const isOpen = $choosin.classList.contains('choosin--isOpen');
       if (isOpen && $choosin !== $choosinInPath) {
-        this.state.set('isOpen', false);
+        $choosin.choosin.close();
       }
     }
   }
