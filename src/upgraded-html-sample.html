@@ -1,6 +1,7 @@
 <div class="choosin choosin--processed" data-csn-hash="uktx2tbp" data-value="United States">
+  <!-- @todo: A11y note - Move these states to the input itself -->
   <!-- Default Trigger State -->
-  <button class="choosin__trigger">United States</button>
+  <!-- <button class="choosin__trigger">United States</button> -->
 
   <!-- Other Trigger States -->
     <!-- Expanded
@@ -16,37 +17,47 @@
   <!-- <div class="choosin__uiWrapper"> -->
 
     <div class="choosin__searchWrapper csn-search">
-      <label class="csn-search__textLabel visually-hidden" for="csn-searchText-wpcei0dx">
+      <!-- @todo: A11y notes, remove the label tag and just let the aria-label on the input add the proper label -->
+      <!-- <label class="csn-search__textLabel visually-hidden" for="csn-searchText-wpcei0dx">
         Search the options in the dropdown
-      </label>
-      <input class="csn-search__textField" id="csn-searchText-wpcei0dx" type="text">
+      </label> -->
+      <!-- @todo: A11y notes, Make the input also the trigger -->
+      <!-- @todo: A11y add the proper aria roles ie. role="combobox" -->
+      <!-- @todo: A11y note, make sure to update the aria-controls attr to reference the corresponding ul list -->
+      <!-- @todo: A11y note, make sure if more than one choosin is on the same page that the aria-controls references the correct list per choosin, also make sure that the input ids are unque per choosin-->
+      <input class="csn-search__textField" id="csn-searchText-wpcei0dx" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="choosin-listbox" aria-label="States" placeholder="States">
+
       <button class="csn-search__clear">
         <span class="visually-hidden">Clear search</span>
       </button>
     </div>
 
     <!-- Options List -->
-    <ul class="choosin__optionsList csn-optionList">
+    <!-- @todo: A11y notes
+      - Each ul list will need a unique ID referenced by aria-controls on the input
+      - The aria-label will need to be updated to match whatever the list contains
+      - Add the proper aria roles ie. role="listbox"
+    -->
+    <ul class="choosin__optionsList csn-optionList" id="choosin-listbox" role="listbox" aria-label="States">
 
+      <!-- @todo: A11y notes
+        - Remove the buttons within the lis, nesting the buttons within lis causes issues with assistive tech
+        - The LIs should be tag with the role info and aria-selected true when the li item is selected
+        - Add the proper roles ie. role="option" to each LI
+      -->
       <!-- Highlighted -->
-      <li class="csn-optionList__item-wrapper">
-        <button class="csn-optionList__option" data-csn-hash="gtgdjvmn" data-value="Afghanistan">
+      <li class="csn-optionList__item-wrapper csn-optionList__option" role="option" data-csn-hash="gtgdjvmn" data-value="Afghanistan" aria-selected="true">
           Afghanistan
-        </button>
       </li>
 
       <!-- Default -->
-      <li class="csn-optionList__item-wrapper">
-        <button class="csn-optionList__option" data-csn-hash="pdbbqu0s" data-value="Andorra">
+      <li class="csn-optionList__item-wrapper csn-optionList__option" role="option" data-csn-hash="pdbbqu0s" data-value="Andorra">
           Andorra
-        </button>
       </li>
 
       <!-- Selected -->
-      <li class="csn-optionList__item-wrapper">
-        <button aria-selected="true" class="csn-optionList__option" data-csn-hash="gzmdmwxg" data-value="United States">
+      <li class="csn-optionList__item-wrapper csn-optionList__option" role="option" aria-selected="true" data-csn-hash="gzmdmwxg" data-value="United States">
           United States
-        </button>
       </li>
     </ul>
   </div>

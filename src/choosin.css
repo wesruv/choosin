@@ -36,7 +36,9 @@
 }
 
 .choosin--hide {
-  opacity: 0.5;
+ /* opacity: 0.5; */
+ display: none; 
+ /* @todo: A11y note, the default select needs to be hidden visually and within the DOM */
 }
 
 .choosin--processed {

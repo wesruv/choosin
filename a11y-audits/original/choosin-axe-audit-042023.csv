@@ -1,0 +1,16 @@
+"Rule ID","Description","Help","Help URL","Impact","Manual","Needs Review","IGT","Selector","Summary","Source Code","Tags","Found By","Test Title","Test URL","Share URL","Created At"
+"color-contrast","Ensures the contrast between foreground and background colors meets WCAG 2 AA contrast ratio thresholds","Elements must have sufficient color contrast","https://dequeuniversity.com/rules/axe/4.6/color-contrast?application=AxeChrome","serious","No","No","","[""#countries-choosin""]","Fix any of the following:
+  Element has insufficient color contrast of 3.85 (foreground color: #777777, background color: #eeeeee, font size: 10.0pt (13.3333px), font weight: normal). Expected contrast ratio of 4.5:1","<select id=""countries-choosin"" class=""choosin choosin--hide"" data-csn-hash=""tusjpmjp"">","cat.color,wcag2aa,wcag143,ACT","kswanson@redhat.com",,"http://localhost:2099/","","2023-04-20T21:11:26.575Z"
+"select-name","Ensures select element has an accessible name","Select element must have an accessible name","https://dequeuniversity.com/rules/axe/4.6/select-name?application=AxeChrome","critical","No","No","","[""#countries-choosin""]","Fix any of the following:
+  Form element does not have an implicit (wrapped) <label>
+  Form element does not have an explicit <label>
+  aria-label attribute does not exist or is empty
+  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty
+  Element has no title attribute
+  Element's default semantics were not overridden with role=""none"" or role=""presentation""","<select id=""countries-choosin"" class=""choosin choosin--hide"" data-csn-hash=""tusjpmjp"">","cat.forms,wcag2a,wcag412,section508,section508.22.n,ACT","kswanson@redhat.com",,"http://localhost:2099/","","2023-04-20T21:11:26.575Z"
+"landmark-one-main","Ensures the document has a main landmark","Document should have one main landmark","https://dequeuniversity.com/rules/axe/4.6/landmark-one-main?application=AxeChrome","moderate","No","No","","[""html""]","Fix all of the following:
+  Document does not have a main landmark","<html lang=""en"" class="""">","cat.semantics,best-practice","kswanson@redhat.com",,"http://localhost:2099/","","2023-04-20T21:11:26.575Z"
+"page-has-heading-one","Ensure that the page, or at least one of its frames contains a level-one heading","Page should contain a level-one heading","https://dequeuniversity.com/rules/axe/4.6/page-has-heading-one?application=AxeChrome","moderate","No","No","","[""html""]","Fix all of the following:
+  Page must have a level-one heading","<html lang=""en"" class="""">","cat.semantics,best-practice","kswanson@redhat.com",,"http://localhost:2099/","","2023-04-20T21:11:26.575Z"
+"region","Ensures all page content is contained by landmarks","All page content should be contained by landmarks","https://dequeuniversity.com/rules/axe/4.6/region?application=AxeChrome","moderate","No","No","","[""#countries-choosin""]","Fix any of the following:
+  Some page content is not contained by landmarks","<select id=""countries-choosin"" class=""choosin choosin--hide"" data-csn-hash=""tusjpmjp"">","cat.keyboard,best-practice","kswanson@redhat.com",,"http://localhost:2099/","","2023-04-20T21:11:26.575Z"
